@@ -1,0 +1,606 @@
+Drug_Type,Name,Batch_No,Description,Stock,Manufacturing_Date,Expiration_Date,Price,Category
+ARAQ,Araq-e-Ajeeb,,5 ml.,,,,17.5,ARAQ
+ARAQ,Araq-e-Badiyan,,200 ml.,,,,13.32,ARAQ
+ARAQ,Araq-e-Gaozaban,,200 ml.,,,,19.85,ARAQ
+ARAQ,Araq-e-Kasni,,200 ml.,,,,15.44,ARAQ
+ARAQ,Araq-e-Mako,,200 ml.,,,,15.76,ARAQ
+ARISHTA,Abhayarishta,,200 ml.,,,,39.47,ARISHTA
+ARISHTA,Abhayarishta,,450 ml.,,,,88.15,ARISHTA
+ARISHTA,Amratarishta,,450 ml.,,,,93.24,ARISHTA
+ARISHTA,Amritarishta,,200 ml.,,,,41.72,ARISHTA
+ARISHTA,Arjunarishta,,200 ml.,,,,32.21,ARISHTA
+ARISHTA,Arjunarishta,,450 ml.,,,,71.82,ARISHTA
+ARISHTA,Ashokarishta,,200 ml.,,,,23.4,ARISHTA
+ARISHTA,Ashokarishta,,450 ml.,,,,52.01,ARISHTA
+ARISHTA,Ashvagandhadyarishta,,200 ml.,,,,94.47,ARISHTA
+ARISHTA,Ashvagandhadyarishta,,450 ml.,,,,211.92,ARISHTA
+ARISHTA,Balarishta,,200 ml.,,,,28.58,ARISHTA
+ARISHTA,Balarishta,,450 ml.,,,,63.65,ARISHTA
+ARISHTA,Dasmuladyarishta,,200 ml.,,,,41.46,ARISHTA
+ARISHTA,Dasmuladyarishta,,450 ml.,,,,92.64,ARISHTA
+ARISHTA,Jeerkadyarishta,,200 ml.,,,,52.1,ARISHTA
+ARISHTA,Jeerkadyarishta,,450 ml.,,,,116.57,ARISHTA
+ARISHTA,Jeerkadyarishta,,300 ml.,,,,82.87,ARISHTA
+ARISHTA,Khadirarishta,,200 ml.,,,,64.32,ARISHTA
+ARISHTA,Khadirarishta,,450 ml.,,,,144.07,ARISHTA
+ARISHTA,Kutajarishta,,200 ml.,,,,30.16,ARISHTA
+ARISHTA,Kutajarishta,,450 ml.,,,,67.22,ARISHTA
+ARISHTA,Mustakarishta,,200 ml.,,,,34.37,ARISHTA
+ARISHTA,Mustakarishta,,450 ml.,,,,76.69,ARISHTA
+ARISHTA,Mustakarishta,,300 ml.,,,,56.28,ARISHTA
+ARISHTA,Rohitakarishta,,200 ml.,,,,19.05,ARISHTA
+ARISHTA,Rohitakarishta,,450 ml.,,,,42.23,ARISHTA
+ARISHTA,Vidangarishta,,200 ml.,,,,63.85,ARISHTA
+ARISHTA,Vidangarishta,,450 ml.,,,,143,ARISHTA
+ARKA,Mishreyark (Ark Saunfa),,100 ml.,,,,7.9,ARKA
+ARKA,Yavanyarka (Ark Ajvayan),,100 ml.,,,,8.45,ARKA
+ASAVA,Aravindasava,,200 ml.,,,,20.06,ASAVA
+ASAVA,Aravindasava,,450 ml.,,,,44.48,ASAVA
+ASAVA,Aravindasava,,80 ml.,,,,9.92,ASAVA
+ASAVA,Chandanasava,,200 ml.,,,,28.82,ASAVA
+ASAVA,Chandanasava,,450 ml.,,,,64.19,ASAVA
+ASAVA,Drakshasava,,200 ml.,,,,52.39,ASAVA
+ASAVA,Drakshasava,,450 ml.,,,,117.24,ASAVA
+ASAVA,Drakshasava,,400 ml.,,,,105.93,ASAVA
+ASAVA,Kankasava,,200 ml.,,,,24.85,ASAVA
+ASAVA,Kankasava,,450 ml.,,,,55.28,ASAVA
+ASAVA,Kumaryasava(A),,200 ml.,,,,28.93,ASAVA
+ASAVA,Kumaryasava(A),,450 ml.,,,,64.45,ASAVA
+ASAVA,Lohasava,,200 ml.,,,,23.07,ASAVA
+ASAVA,Lohasava,,450 ml.,,,,51.26,ASAVA
+ASAVA,Punarnavasava,,200 ml.,,,,20.79,ASAVA
+ASAVA,Punarnavasava,,450 ml.,,,,46.13,ASAVA
+ASAVA,Rodhrasava/Lodhrasava,,200 ml.,,,,49.34,ASAVA
+ASAVA,Rodhrasava/Lodhrasava,,450 ml.,,,,110.37,ASAVA
+ASAVA,Sarivadyasava,,200 ml.,,,,39.61,ASAVA
+ASAVA,Sarivadyasava,,450 ml.,,,,88.48,ASAVA
+ASAVA,Vaskasava(Vasakarishta),,200 ml.,,,,19.65,ASAVA
+ASAVA,Vaskasava(Vasakarishta),,450 ml.,,,,43.57,ASAVA
+Awaleha & Pak,Agastyaharitaki Rasayan,,100 gms.(J),,,,33.18,Awaleha & Pak
+Awaleha & Pak,Agastyaharitaki Rasayan,,300 gms.,,,,89.44,Awaleha & Pak
+Awaleha & Pak,Bilwadi Leha,,100 gms.(J),,,,56.42,Awaleha & Pak
+Awaleha & Pak,Brahm Rasayan,,100 gms.(J),,,,34,Awaleha & Pak
+Awaleha & Pak,Brahm Rasayan,,450 gms.,,,,127.12,Awaleha & Pak
+Awaleha & Pak,Chitrakharitaki,,100 gms.(J),,,,32.8,Awaleha & Pak
+Awaleha & Pak,Chitrakharitaki,,96 gms.(J),,,,31.91,Awaleha & Pak
+Awaleha & Pak,Chitrakharitaki,,180 gms.(J),,,,54.73,Awaleha & Pak
+Awaleha & Pak,Chyavan Prash,,180 gms.,,,,80.7,Awaleha & Pak
+Awaleha & Pak,Chyavan Prash,,450 gms.,,,,186.63,Awaleha & Pak
+Awaleha & Pak,Chyavan Prash,,1 Kg.,,,,410.37,Awaleha & Pak
+Awaleha & Pak,Haridra Khanda,,100 gms.(J),,,,37.42,Awaleha & Pak
+Awaleha & Pak,Kantakaryavaleha(Syp.),,100 ml.,,,,23.66,Awaleha & Pak
+Awaleha & Pak,Kantakaryavaleha(Syp.),,300 ml.,,,,72.15,Awaleha & Pak
+Awaleha & Pak,Kushmandaka Rasayana,,100 gms.(J),,,,43.59,Awaleha & Pak
+Awaleha & Pak,Kushmandaka Rasayana,,450 gms.,,,,170.24,Awaleha & Pak
+Awaleha & Pak,Kutajavaleha (Syp.),,100 ml.,,,,34,Awaleha & Pak
+Awaleha & Pak,Kutajavaleha (Syp.),,300 ml.,,,,103.19,Awaleha & Pak
+Awaleha & Pak,Madhusnuhi Rasayan,,100 gms.(J),,,,71.51,Awaleha & Pak
+Awaleha & Pak,Pugakhand (Suparipak),,100 gms.(J),,,,57.26,Awaleha & Pak
+Awaleha & Pak,Satavari Guda,,100 gms.(J),,,,81.41,Awaleha & Pak
+Awaleha & Pak,Saubhagyashunthi,,100 gms.(J),,,,52.67,Awaleha & Pak
+Awaleha & Pak,Vasavaleha,,100 gms.(J),,,,44.35,Awaleha & Pak
+BHASMA,Godanti Bhasma,,5 gms.,,,,10.01,BHASMA
+BHASMA,Godanti Bhasma,,100 gms.,,,,96.71,BHASMA
+BHASMA,Godanti Bhasma,,1 Kg.,,,,907.43,BHASMA
+BHASMA,Kapardika Bhasma,,5 gms.,,,,8.55,BHASMA
+BHASMA,Kapardika Bhasma,,100 gms.,,,,67.6,BHASMA
+BHASMA,Kapardika Bhasma,,1 Kg.,,,,616.65,BHASMA
+BHASMA,Muktashukti Bhasma,,5 gms.,,,,8.21,BHASMA
+BHASMA,Muktashukti Bhasma,,100 gms.,,,,60.59,BHASMA
+BHASMA,Muktashukti Bhasma,,1 Kg.,,,,546.16,BHASMA
+BHASMA,Praval Bhasma,,2 gms.,,,,33.94,BHASMA
+BHASMA,Praval Bhasma,,5 gms.,,,,76.32,BHASMA
+BHASMA,Praval Bhasma,,1 Kg.,,,,14167.34,BHASMA
+BHASMA,Shankha Bhasma,,5 gms.,,,,7.12,BHASMA
+BHASMA,Shankha Bhasma,,100 gms.,,,,38.89,BHASMA
+BHASMA,Shankha Bhasma,,1 Kg.,,,,329.19,BHASMA
+BHASMA,Sphatika Bhasma,,5 gms.,,,,5.92,BHASMA
+BHASMA,Sphatika Bhasma,,100 gms.,,,,14.78,BHASMA
+BHASMA,Sphatika Bhasma,,1 Kg.,,,,88.08,BHASMA
+BHASMA,Tankan Bhasma,,5 gms.,,,,6.64,BHASMA
+BHASMA,Tankan Bhasma,,100 gms.,,,,29.34,BHASMA
+BHASMA,Tankan Bhasma,,1 Kg.,,,,233.72,BHASMA
+BHASMA,Tankan Bhasma,,500 gms.,,,,120.24,BHASMA
+CHOORNA,Ajmodadi Choorna,,50 gms.,,,,26.8,CHOORNA
+CHOORNA,Ajmodadi Choorna,,1 Kg.,,,,375.82,CHOORNA
+CHOORNA,Amalaki Choorna,,100 gms.,,,,44.18,CHOORNA
+CHOORNA,Amalaki Choorna,,1 Kg.,,,,382.1,CHOORNA
+CHOORNA,Ashtang Lavan Choorna,,50 gms.,,,,42.06,CHOORNA
+CHOORNA,Ashtang Lavan Choorna,,1 Kg.,,,,681.05,CHOORNA
+CHOORNA,Ashwagandha Choorna,,50 gms.,,,,33.73,CHOORNA
+CHOORNA,Ashwagandha Choorna,,1 Kg.,,,,514.41,CHOORNA
+CHOORNA,Avipattikar Choorna,,50 gms.,,,,32.53,CHOORNA
+CHOORNA,Avipattikar Choorna,,1 Kg.,,,,490.35,CHOORNA
+CHOORNA,Bakuchi Choorna,,10 gms.,,,,7.87,CHOORNA
+CHOORNA,Bakuchi Choorna,,1 Kg.,,,,272.8,CHOORNA
+CHOORNA,Balchaturbhadrika Choorna,,25 gms.,,,,198.05,CHOORNA
+CHOORNA,Balchaturbhadrika Choorna,,1 Kg.,,,,7651.46,CHOORNA
+CHOORNA,Bhaskarlavan Choorna,,50 gms.,,,,30.25,CHOORNA
+CHOORNA,Bhaskarlavan Choorna,,1 Kg.,,,,444.8,CHOORNA
+CHOORNA,Dadimastak Choorna,,50 gms.,,,,35.02,CHOORNA
+CHOORNA,Dadimastak Choorna,,1 Kg.,,,,540.26,CHOORNA
+CHOORNA,Dashana Sanskar Choorna,,20 gms.,,,,18.99,CHOORNA
+CHOORNA,Dashana Sanskar Choorna,,1 Kg.,,,,600.58,CHOORNA
+CHOORNA,Guduchi Satva Choorna,,50 gms.,,,,29.96,CHOORNA
+CHOORNA,Guduchi Satva Choorna,,100 gms.,,,,49.87,CHOORNA
+CHOORNA,Haritaki Choorna,,50 gms.,,,,17.93,CHOORNA
+CHOORNA,Haritaki Choorna,,1 Kg.,,,,198.39,CHOORNA
+CHOORNA,Hingwastak Choorna,,50 gms.,,,,54,CHOORNA
+CHOORNA,Hingwastak Choorna,,1 Kg.,,,,919.84,CHOORNA
+CHOORNA,Madhuyasti Choorna,,25 gms.,,,,16.5,CHOORNA
+CHOORNA,Madhuyasti Choorna,,1 Kg.,,,,389.31,CHOORNA
+CHOORNA,Panchnimba Choorna,,50 gms.,,,,43.02,CHOORNA
+CHOORNA,Panchnimba Choorna,,1 Kg.,,,,700.26,CHOORNA
+CHOORNA,Pipali Choorna,,25 gms.,,,,59.47,CHOORNA
+CHOORNA,Pipali Choorna,,1 Kg.,,,,2108.16,CHOORNA
+CHOORNA,Pushyanug Choorna,,50 gms.,,,,434.76,CHOORNA
+CHOORNA,Pushyanug Choorna,,1 Kg.,,,,8535.11,CHOORNA
+CHOORNA,Pushyanug Choorna,,90 gms.,,,,774.57,CHOORNA
+CHOORNA,Shunthi Choorna,,25 gms.,,,,21.66,CHOORNA
+CHOORNA,Shunthi Choorna,,1 Kg.,,,,595.87,CHOORNA
+CHOORNA,Sitopaladi Choorna,,25 gms.,,,,37.29,CHOORNA
+CHOORNA,Sitopaladi Choorna,,50 gms.,,,,69.07,CHOORNA
+CHOORNA,Sitopaladi Choorna,,1 Kg.,,,,1221.14,CHOORNA
+CHOORNA,Somlata Choorna,,25 gms.,,,,14.45,CHOORNA
+CHOORNA,Somlata Choorna,,500 gms.,,,,157.05,CHOORNA
+CHOORNA,Sudarsana Choorna,,25 gms.,,,,22.18,CHOORNA
+CHOORNA,Sudarsana Choorna,,1 Kg.,,,,616.62,CHOORNA
+CHOORNA,Sudha Svaran Gairik Choorna,,10 gms.,,,,6.68,CHOORNA
+CHOORNA,Sudha Svaran Gairik Choorna,,50 gms.,,,,15.72,CHOORNA
+CHOORNA,Talisadi  Choorna,,50 gms.,,,,39,CHOORNA
+CHOORNA,Talisadi  Choorna,,1 Kg.,,,,619.83,CHOORNA
+CHOORNA,Triphala Choorna,,50 gms.,,,,22.7,CHOORNA
+CHOORNA,Triphala Choorna,,1 Kg.,,,,293.91,CHOORNA
+CHOORNA,Triphala Choorna,,500 gms.,,,,150.35,CHOORNA
+CHOORNA,Trivrita Choorna,,5 gms.,,,,6.57,CHOORNA
+CHOORNA,Trivrita Choorna,,1 Kg.,,,,218.65,CHOORNA
+GHAN VATI,Kutajghan Vati,,5 gms.,,,,17.43,GHAN VATI
+GHAN VATI,Kutajghan Vati,,100 gms.,,,,245.05,GHAN VATI
+GHRITA,Brahmi Ghrita,,100 gms.(J),,,,131.06,GHRITA
+GHRITA,Changeri Ghrita,,100 gms.(J),,,,132.56,GHRITA
+GHRITA,Mahatriphaladya Ghrita,,100 gms.(J),,,,218.01,GHRITA
+GHRITA,Panchatiktaguggulu Ghrita,,100 gms.(J),,,,232.6,GHRITA
+GHRITA,Panchatiktaguggulu Ghrita,,180 gms.(J),,,,414.36,GHRITA
+GHRITA,Sarasvata Ghrita,,100 gms.(J),,,,140.82,GHRITA
+GHRITA,Sukumar Ghrita,,100 gms.(J),,,,137.18,GHRITA
+GUGGULU,Gokshuradi Guggulu,,20 gms.,,,,42.95,GUGGULU
+GUGGULU,Gokshuradi Guggulu,,1 Kg.,,,,1798.2,GUGGULU
+GUGGULU,Kaishore Guggulu,,20 gms.,,,,41.93,GUGGULU
+GUGGULU,Kaishore Guggulu,,1 Kg.,,,,1747.51,GUGGULU
+GUGGULU,Kanchnar Guggulu,,20 gms.,,,,34.28,GUGGULU
+GUGGULU,Kanchnar Guggulu,,1 Kg.,,,,1365.09,GUGGULU
+GUGGULU,Laksa Guggulu,,20 gms.,,,,38.17,GUGGULU
+GUGGULU,Laksa Guggulu,,1 Kg.,,,,1559.27,GUGGULU
+GUGGULU,M Ayur Antacid Cap.,,40 cap.,,,,52.1,GUGGULU
+GUGGULU,M Ayur Antacid Syp,,100 ml.,,,,23.1,GUGGULU
+GUGGULU,M Heamo Care Capsule,,40 cap.,,,,54.3,GUGGULU
+GUGGULU,M Heamo Care Syp,,100 ml.,,,,22.6,GUGGULU
+GUGGULU,M Immuno Care Cap,,40 cap.,,,,69.6,GUGGULU
+GUGGULU,M Leuco  Care Cap,,40 cap.,,,,51.2,GUGGULU
+GUGGULU,M Leuco  Care Syp,,100 ml.,,,,22.8,GUGGULU
+GUGGULU,M Live  Care Cap,,40 cap.,,,,50.3,GUGGULU
+GUGGULU,M Live  Care Syp,,100 ml.,,,,25.4,GUGGULU
+GUGGULU,M Obi Care Capsule,,40 cap.,,,,68.1,GUGGULU
+GUGGULU,M Psora Care Capsule,,40 cap.,,,,38.5,GUGGULU
+GUGGULU,M Psora Care Cream,,20 gms.,,,,21.3,GUGGULU
+GUGGULU,M Rheuma Care Cream,,20 gms.,,,,27.1,GUGGULU
+GUGGULU,M Rheuma Care Oil,,50 Ml.,,,,74.9,GUGGULU
+GUGGULU,M Rheuma Care Oint,,60 gms.,,,,65.1,GUGGULU
+GUGGULU,M Rheuma Comp Capsule,,40 cap.,,,,58.5,GUGGULU
+GUGGULU,M Stress  Care Cap,,40 cap.,,,,76,GUGGULU
+GUGGULU,M Sugar Care Cap,,40 cap.,,,,43.5,GUGGULU
+GUGGULU,M Thyro Care Cap,,40 cap.,,,,38.4,GUGGULU
+GUGGULU,M. B.P. Care Capsule,,40 cap.,,,,59.4,GUGGULU
+GUGGULU,M. Cough Care Syrup,,100 ml.,,,,39.4,GUGGULU
+GUGGULU,M. Desento Care Capsule,,40 cap.,,,,45.5,GUGGULU
+GUGGULU,M. Gyno Care Capsule,,40 cap.,,,,63.6,GUGGULU
+GUGGULU,M.Mamajjaka Capsule,,40 cap.,,,,99.4,GUGGULU
+GUGGULU,M.Mamajjaka Capsule,,60 cap.,,,,141.1,GUGGULU
+GUGGULU,Punarnavadi Guggulu,,20 gms.,,,,40.91,GUGGULU
+GUGGULU,Punarnavadi Guggulu,,1 Kg.,,,,1696.64,GUGGULU
+GUGGULU,Saptavimshatika Guggulu,,20 gms.,,,,42.35,GUGGULU
+GUGGULU,Saptavimshatika Guggulu,,1 Kg.,,,,1768.39,GUGGULU
+GUGGULU,Singhnad Guggulu,,20 gms.,,,,22.06,GUGGULU
+GUGGULU,Singhnad Guggulu,,1 Kg.,,,,753.85,GUGGULU
+GUGGULU,Triphala Guggulu,,20 gms.,,,,42.41,GUGGULU
+GUGGULU,Triphala Guggulu,,1 Kg.,,,,1771.64,GUGGULU
+GUGGULU,Tryadashanga Guggulu,,20 gms.,,,,35.72,GUGGULU
+GUGGULU,Tryadashanga Guggulu,,1 Kg.,,,,1436.86,GUGGULU
+GUGGULU,Vatari Guggulu,,20 gms.,,,,25.12,GUGGULU
+GUGGULU,Vatari Guggulu,,1 Kg.,,,,906.75,GUGGULU
+GUGGULU,Vyoshadi Guggulu,,20 gms.,,,,40.25,GUGGULU
+GUGGULU,Vyoshadi Guggulu,,1 Kg.,,,,1663.15,GUGGULU
+GUGGULU,Yograj Guggulu,,20 gms.,,,,34.67,GUGGULU
+GUGGULU,Yograj Guggulu,,1 Kg.,,,,1384.63,GUGGULU
+HABB & QURS,Bandiq-ul- Bazoori,,30 pill.,,,,14.45,HABB & QURS
+HABB & QURS,Bandiq-ul- Bazoori,,1000 pill.,,,,245.41,HABB & QURS
+HABB & QURS,Habb-e-Azaraqi,,30 pill.,,,,11.55,HABB & QURS
+HABB & QURS,Habb-e-Azaraqi,,1000 pill.,,,,222.16,HABB & QURS
+HABB & QURS,Habb-e-Bawaseer Amya,,30 pill.,,,,19.46,HABB & QURS
+HABB & QURS,Habb-e-Bawaseer Amya,,1000 pill.,,,,394.5,HABB & QURS
+HABB & QURS,Habb-e-Bukhar,,30 pill.,,,,30,HABB & QURS
+HABB & QURS,Habb-e-Bukhar,,1000 pill.,,,,729.99,HABB & QURS
+HABB & QURS,Habb-e-Hindi Zeeqi,,30 pill.,,,,13.6,HABB & QURS
+HABB & QURS,Habb-e-Hindi Zeeqi,,1000 pill.,,,,291.93,HABB & QURS
+HABB & QURS,Habb-e-Jawahar,,30 pill.,,,,214.89,HABB & QURS
+HABB & QURS,Habb-e-Jawahar,,1000 pill.,,,,6821.7,HABB & QURS
+HABB & QURS,Habb-e-Jund,,30 pill.,,,,135.62,HABB & QURS
+HABB & QURS,Habb-e-Jund,,1000 pill.,,,,4440.4,HABB & QURS
+HABB & QURS,Habb-e-Kabid Naushadri,,30 pill.,,,,17.92,HABB & QURS
+HABB & QURS,Habb-e-Kabid Naushadri,,1000 pill.,,,,351.19,HABB & QURS
+HABB & QURS,Habb-e-Mudirr,,30 pill.,,,,229.05,HABB & QURS
+HABB & QURS,Habb-e-Mudirr,,1000 pill.,,,,7617.35,HABB & QURS
+HABB & QURS,Habb-e-Muqil,,30 pill.,,,,27.07,HABB & QURS
+HABB & QURS,Habb-e-Muqil,,1000 pill.,,,,666.23,HABB & QURS
+HABB & QURS,Habb-e-Musaffi Khoon,,30 pill.,,,,10.84,HABB & QURS
+HABB & QURS,Habb-e-Musaffi Khoon,,1000 pill.,,,,120.31,HABB & QURS
+HABB & QURS,Habb-e-Ral,,30 pill.,,,,8.78,HABB & QURS
+HABB & QURS,Habb-e-Ral,,1000 pill.,,,,56.47,HABB & QURS
+HABB & QURS,Habb-e-Rasaut,,30 pill.,,,,15.17,HABB & QURS
+HABB & QURS,Habb-e-Rasaut,,1000 pill.,,,,258.24,HABB & QURS
+HABB & QURS,Habb-e-Shifa,,30 pill.,,,,7.92,HABB & QURS
+HABB & QURS,Habb-e-Shifa,,1000 pill.,,,,88.73,HABB & QURS
+HABB & QURS,Habb-e-Suranjan,,30 pill.,,,,14.66,HABB & QURS
+HABB & QURS,Habb-e-Suranjan,,1000 pill.,,,,252.63,HABB & QURS
+HABB & QURS,Habb-e-Surfa,,30 pill.,,,,40.77,HABB & QURS
+HABB & QURS,Habb-e-Surfa,,1000 pill.,,,,1286.51,HABB & QURS
+HABB & QURS,Habb-e-Tinkar,,30 pill.,,,,15.84,HABB & QURS
+HABB & QURS,Habb-e-Tinkar,,1000 pill.,,,,279.31,HABB & QURS
+HABB & QURS,Habb-e-Tursh Mustahi,,30 pill.,,,,23.98,HABB & QURS
+HABB & QURS,Habb-e-Tursh Mustahi,,1000 pill.,,,,563.06,HABB & QURS
+HABB & QURS,Qurs-e-Ghafis,,30 pill.,,,,29.76,HABB & QURS
+HABB & QURS,Qurs-e-Ghafis,,1000 pill.,,,,722.41,HABB & QURS
+HABB & QURS,Qurs-e-Kafoor,,30 pill.,,,,18.69,HABB & QURS
+HABB & QURS,Qurs-e-Kafoor,,1000 pill.,,,,370.16,HABB & QURS
+HABB & QURS,Qurs-e-Mulyaiyan,,30 pill.,,,,32.7,HABB & QURS
+HABB & QURS,Qurs-e-Mulyaiyan,,1000 pill.,,,,816.07,HABB & QURS
+HABB & QURS,Qurs-e-Zarishk,,30 pill.,,,,18.18,HABB & QURS
+HABB & QURS,Qurs-e-Zarishk,,1000 pill.,,,,354.04,HABB & QURS
+HABB & QURS,Qurs-e-Ziabitus Sada,,30 pill.,,,,19.56,HABB & QURS
+HABB & QURS,Qurs-e-Ziabitus Sada,,1000 pill.,,,,397.72,HABB & QURS
+ITRIFAL,Itrifal Kishneezi,,100 gm.,,,,22.84,ITRIFAL
+ITRIFAL,Itrifal Zamani,,100 gm.,,,,76.41,ITRIFAL
+ITRIFAL,Itrifal-e-Shahtara,,100 gm.,,,,31.58,ITRIFAL
+ITRIFAL,Itrifal-e-Ustukhuddus,,100 gm.,,,,27.21,ITRIFAL
+JAWARISH,Jawarish -e- Shahi,,100 gm.,,,,26.37,JAWARISH
+JAWARISH,Jawarish -e- Zarooni Sada,,100 gm.,,,,157.52,JAWARISH
+JAWARISH,Jawarish-e- Kamooni,,100 gm.,,,,31.18,JAWARISH
+JAWARISH,Jawarish-e- Pudina,,100 gm.,,,,79.4,JAWARISH
+JAWARISH,Jawarish-e-Amla Sada,,100 gm.,,,,22.71,JAWARISH
+JAWARISH,Jawarish-e-Anarain,,100 gm.,,,,96.78,JAWARISH
+JAWARISH,Jawarish-e-Bisbasa,,100 gm.,,,,40.57,JAWARISH
+JAWARISH,Jawarish-e-Jalinoos,,100 gm.,,,,198.38,JAWARISH
+JAWARISH,Jawarish-e-Mastagi,,100 gm.,,,,77.86,JAWARISH
+JAWARISH,Jawarish-e-Zanjabeel,,100 gm.,,,,42.72,JAWARISH
+KHAMIRA,Khamira Abresham Sada,,60 gm.,,,,101.69,KHAMIRA
+KHAMIRA,Khamira-e-Gaozuban Sada,,60 gm.,,,,23.83,KHAMIRA
+KHAMIRA,Khamira-e-Marwareed (Khas),,60 gm.,,,,137.02,KHAMIRA
+KUPI PAKVA,Rasamanikya,,5 gms.,,,,40.63,KUPI PAKVA
+KUPI PAKVA,Rasamanikya,,100 gms.,,,,709.11,KUPI PAKVA
+KUSHTA,Kushta-e- Faulad,,10 gm.,,,,11.81,KUSHTA
+KUSHTA,Kushta-e- Godanti,,10 gm.,,,,14.6,KUSHTA
+KUSHTA,Kushta-e- Marjan,,10 gm.,,,,209.13,KUSHTA
+KUSHTA,Kushta-e- Sadaf,,10 gm.,,,,16.04,KUSHTA
+KUSHTA,Kushta-e- Shankha,,10 gm.,,,,8.5,KUSHTA
+KUSHTA,Kushta-e-Baiza-e-Murgh,,10 gm.,,,,7.1,KUSHTA
+KVATHA CHOORNA,Br. Manjishthadi Kwatha,,100 gms.(K),,,,99.47,KVATHA CHOORNA
+KVATHA CHOORNA,Dashmool Kvatha,,100 gms.(K),,,,30.94,KVATHA CHOORNA
+KVATHA CHOORNA,Nagaradi Kvatha,,100 gms.(K),,,,32.88,KVATHA CHOORNA
+KVATHA CHOORNA,Panchavalkal Kvatha,,100 gms.(K),,,,34.35,KVATHA CHOORNA
+KVATHA CHOORNA,Pashanbhedadi Kvatha,,100 gms.(K),,,,77.48,KVATHA CHOORNA
+KVATHA CHOORNA,Phalatrikadi Kvatha,,100 gms.(K),,,,31.98,KVATHA CHOORNA
+KVATHA CHOORNA,Rasnairandadi Kvatha,,100 gms.(K),,,,184.21,KVATHA CHOORNA
+KVATHA CHOORNA,Rasnairandadi Kvatha,,200 gms.,,,,358.04,KVATHA CHOORNA
+KVATHA CHOORNA,Rasnasaptaka Kwatha,,100 gms.(K),,,,29.57,KVATHA CHOORNA
+KVATHA CHOORNA,Trinpanchamool Kvatha,,100 gms.(K),,,,29.62,KVATHA CHOORNA
+KVATHA CHOORNA,Varunadi Kwatha,,100 gms.(K),,,,41.35,KVATHA CHOORNA
+LAUHA,Br.Yakradari Lauha,,10 gms.,,,,33.2,LAUHA
+LAUHA,Br.Yakradari Lauha,,100 gms.,,,,286.7,LAUHA
+LAUHA,Chandanadi Lauha,,10 gms.,,,,16.12,LAUHA
+LAUHA,Chandanadi Lauha,,100 gms.,,,,115.75,LAUHA
+LAUHA,Dhatri Lauha,,10 gms.,,,,10.43,LAUHA
+LAUHA,Dhatri Lauha,,100 gms.,,,,58.89,LAUHA
+LAUHA,Dhatri Lauha,,60 T/C,,,,39.27,LAUHA
+LAUHA,Navayasa Lauha,,10 gms.,,,,15.87,LAUHA
+LAUHA,Navayasa Lauha,,100 gms.,,,,113.27,LAUHA
+LAUHA,Saptamrita Lauha,,10 gms.,,,,13.84,LAUHA
+LAUHA,Saptamrita Lauha,,100 gms.,,,,93.02,LAUHA
+LAUHA,Shilajatvadi Lauha,,10 gms.,,,,17.25,LAUHA
+LAUHA,Shilajatvadi Lauha,,100 gms.,,,,127.04,LAUHA
+LAUHA,Vidangadya Lauha,,10 gms.,,,,16.04,LAUHA
+LAUHA,Vidangadya Lauha,,100 gms.,,,,114.94,LAUHA
+LAUQ,Lauq-e-Khashkhaash,,100 gm.,,,,39.39,LAUQ
+LAUQ,Lauq-e-Khiarshambar,,100 gm.,,,,22.76,LAUQ
+LAUQ,Lauq-e-Sapistan,,100 gm.,,,,22.74,LAUQ
+LEPA,Dadrughan Lepa,,10 gms.,,,,14.58,LEPA
+LEPA,Dadrughan Lepa,,100 gms.,,,,100.38,LEPA
+LEPA,Dashanga Lepa,,50 gms.,,,,51.82,LEPA
+LEPA,Dashanga Lepa,,500 gms.,,,,441.46,LEPA
+LEPA,Lepagutika,,10 gms.,,,,24.11,LEPA
+LEPA,Lepagutika,,100 gms.,,,,195.73,LEPA
+MAJOON,Anoshdaru,,100 gm.,,,,146.18,MAJOON
+MAJOON,Dawa-ul-Misk Motadil Sada,,100 gm.,,,,129.32,MAJOON
+MAJOON,Majoon Arad Khurma,,100 gm.,,,,40.3,MAJOON
+MAJOON,Majoon Azaraqi,,100 gm.,,,,44.97,MAJOON
+MAJOON,Majoon Chobchini,,100 gm.,,,,50.36,MAJOON
+MAJOON,Majoon Dabeed-ul-Ward,,100 gm.,,,,110.02,MAJOON
+MAJOON,Majoon Falasifa,,100 gm.,,,,54.45,MAJOON
+MAJOON,Majoon Hajrul Yahood,,100 gm.,,,,33.9,MAJOON
+MAJOON,Majoon Ispand Sokhatani,,100 gm.,,,,36.96,MAJOON
+MAJOON,Majoon Jograj Gugal,,100 gm.,,,,55.68,MAJOON
+MAJOON,Majoon Kundur,,100 gm.,,,,59.6,MAJOON
+MAJOON,Majoon Najah,,100 gm.,,,,33.67,MAJOON
+MAJOON,Majoon Piyaz,,100 gm.,,,,78.86,MAJOON
+MAJOON,Majoon Rahul Momineen,,100 gm.,,,,39.3,MAJOON
+MAJOON,Majoon Suparipak,,100 gm.,,,,83.72,MAJOON
+MAJOON,Majoon Suranjan,,100 gm.,,,,33.63,MAJOON
+MAJOON,Majoon Ushba,,100 gm.,,,,35.32,MAJOON
+MAJOON,Majoon Zabeeb,,100 gm.,,,,43.05,MAJOON
+MAJOON,Majoon-e-Masik-ul-Baul,,100 gm.,,,,42.48,MAJOON
+MAJOON,Majoon-e-Nankhwah,,100 gm.,,,,34.42,MAJOON
+MAJOON,Tiryaq-e-Arba,,100 gm.,,,,179.65,MAJOON
+MAJOON,Tiryaq-e-Nazla,,100 gm.,,,,40.86,MAJOON
+MANDOOR,Punarnavadi Mandoor,,10 gms.,,,,12.8,MANDOOR
+MANDOOR,Punarnavadi Mandoor,,100 gms.,,,,82.55,MANDOOR
+MANDOOR,Punarnavadi Mandoor,,60 T/C,,,,46.37,MANDOOR
+MARHAM,Marham Kafoor,,50 gm.,,,,32.66,MARHAM
+MARHAM,Marham Quba,,50 gm.,,,,57.29,MARHAM
+New Product,Draksha Avaleha,,300 gms.,,,,170.4,New Product
+New Product,Draksharista,,200 ml.,,,,49.91,New Product
+New Product,Draksharista,,400 ml.,,,,100.97,New Product
+New Product,Habb-e-Aasab,,30 pill.,,,,7.99,New Product
+New Product,Habb-e-Aasab,,1000 pill.,,,,101.18,New Product
+New Product,Habb-e-Asgand,,30 pill.,,,,13.05,New Product
+New Product,Habb-e-Asgand,,1000 pill.,,,,198.97,New Product
+New Product,Habb-e-Banafsa,,30 pill.,,,,31.84,New Product
+New Product,Habb-e-Banafsa,,1000 pill.,,,,825.17,New Product
+New Product,Habb-e-Bawaseer Damiya,,30 pill.,,,,20.96,New Product
+New Product,Habb-e-Bawaseer Damiya,,1000 pill.,,,,462.61,New Product
+New Product,Habb-e-Hilteet,,30 pill.,,,,23.58,New Product
+New Product,Habb-e-Hilteet,,1000 pill.,,,,549.83,New Product
+New Product,Habb-e-Karanjawa,,30 pill.,,,,12.38,New Product
+New Product,Habb-e-Karanjawa,,1000 pill.,,,,179.4,New Product
+New Product,Habb-e-Mubarak,,30 pill.,,,,10.55,New Product
+New Product,Habb-e-Mubarak,,1000 pill.,,,,112,New Product
+New Product,Habb-e-Surfa Atfal,,30 pill.,,,,10.17,New Product
+New Product,Habb-e-Surfa Atfal,,1000 pill.,,,,162.97,New Product
+New Product,Halwa-e-Gheekwar,,100 gm.,,,,34.22,New Product
+New Product,Indukant Ghrita,,300 gms.,,,,366.43,New Product
+New Product,Kushta-e-Hajrul Yahood,,10 gm.,,,,14.09,New Product
+New Product,Laboob-e-Sagheer,,100 gm.,,,,46.64,New Product
+New Product,Majoon-e-Muqawwi Raham,,100 gm.,,,,38.52,New Product
+New Product,Majoon-e-Sangdanae Murg,,100 gm.,,,,33.88,New Product
+New Product,Marham Gulabi,,50 gm.,,,,79.38,New Product
+New Product,Marham Kharish Jadeed,,50 gm.,,,,28.8,New Product
+New Product,Marham Safaid Kafoori,,50 gm.,,,,26.96,New Product
+New Product,Qurs-e-Anjabar,,30 pill.,,,,20.75,New Product
+New Product,Qurs-e-Anjabar,,1000 pill.,,,,435.4,New Product
+New Product,Qurs-e-Habis,,30 pill.,,,,16.79,New Product
+New Product,Qurs-e-Habis,,1000 pill.,,,,309.75,New Product
+New Product,Qurs-e-Ziabetus Khas,,30 pill.,,,,16.94,New Product
+New Product,Qurs-e-Ziabetus Khas,,1000 pill.,,,,314.57,New Product
+New Product,Raughan Ahmar,,50 ml.,,,,81,New Product
+New Product,Raughan Suranjan,,50 ml.,,,,96.35,New Product
+New Product,Safoof Bars,,50 gm.,,,,59.19,New Product
+New Product,Safoof Hazim,,50 gm.,,,,32.94,New Product
+New Product,Safoof Kakara-singhi,,50 gm.,,,,86.31,New Product
+New Product,Safoof Muhazzil,,50 gm.,,,,39.3,New Product
+New Product,Safoof Mushil,,50 gm.,,,,55.9,New Product
+New Product,Safoof Shaikh-ur-Rais,,50 gm.,,,,36.6,New Product
+New Product,Safoof Surkh,,50 gm.,,,,17.3,New Product
+New Product,Safoof Tabkheer,,50 gm.,,,,94.82,New Product
+New Product,Shikanjbeen Bazoori Motadil,,200 ml.,,,,53.33,New Product
+New Product,Triyak-e-Pechish,,50 gm.,,,,27.7,New Product
+New Product,Zimmad-e-Mohallil,,50 gm.,,,,49.24,New Product
+OTHER,Sanun Mukharije Ratubat,,50 gm.,,,,117.33,OTHER
+OTHER,Sanun Mukharije Ratubat,,1 Kg.,,,,2186.4,OTHER
+OTHER,Zaroore Qula,,10 gm.,,,,20.13,OTHER
+OTHER,Zaroore Qula,,1 Kg.,,,,1496.6,OTHER
+PARPATI,Panchamrita Parpati,,5 gms.,,,,31.79,PARPATI
+PARPATI,Panchamrita Parpati,,100 gms.,,,,532.3,PARPATI
+PARPATI,Shvet Parpati,,10 gms.,,,,8.78,PARPATI
+PARPATI,Shvet Parpati,,100 gms.,,,,42.35,PARPATI
+PISHTI,Akikpishti,,5 gms.,,,,7.35,PISHTI
+PISHTI,Akikpishti,,100 gms.,,,,43.39,PISHTI
+PISHTI,Muktapishti,,2 gms.,,,,21.86,PISHTI
+PISHTI,Muktapishti,,5 gms.,,,,46.11,PISHTI
+PISHTI,Muktapishti,,10 gms.,,,,86.41,PISHTI
+PISHTI,Pravalpishti,,5 gms.,,,,81.16,PISHTI
+PISHTI,Pravalpishti,,100 gms.,,,,1519.75,PISHTI
+PISHTI,Pravalpishti,,30 T/C,,,,128.55,PISHTI
+PISHTI,Sangeyahoodpishti,,5 gms.,,,,9.87,PISHTI
+PISHTI,Sangeyahoodpishti,,100 gms.,,,,93.76,PISHTI
+PISHTI,Trinkantmanipishti,,5 gms.,,,,15.9,PISHTI
+Patent Medicines,Ayush- 64,,40 cap.,,,,76.9,Patent Medicines
+Patent Medicines,Ayush- 64,,1000 cap.,,,,1717.93,Patent Medicines
+Patent Medicines,M. Brahmi Rasayan(Avaleha),,100 gms.(J),,,,31.29,Patent Medicines
+Patent Medicines,M. Sarpagandha Mishran,,40 T/C,,,,15.49,Patent Medicines
+Patent Medicines,M. Sarpagandha Mishran,,1000 T/C,,,,211.95,Patent Medicines
+Patent Medicines,M. Shankhapushpi (Syp.),,100 ml.,,,,23.97,Patent Medicines
+Patent Medicines,M. Shankhapushpi (Syp.),,200 ml.,,,,45.57,Patent Medicines
+Patent Medicines,M. Shankhapushpi (Syp.),,450 ml.,,,,101.88,Patent Medicines
+Patent Medicines,M. Sudarshanghan Vati,,5 gms.,,,,27.56,Patent Medicines
+Patent Medicines,M. Sudarshanghan Vati,,100 gms.,,,,447.66,Patent Medicines
+Patent Medicines,M. Svadishta Virechan Choorna,,50 gms.,,,,18.42,Patent Medicines
+Patent Medicines,M. Svadishta Virechan Choorna,,1 Kg.,,,,208.22,Patent Medicines
+Patent Medicines,M. Tribhuvanmishran,,40 T/C,,,,31.72,Patent Medicines
+Patent Medicines,M. Tribhuvanmishran,,1000 T/C,,,,617.86,Patent Medicines
+Patent Medicines,M. Vasaco (Syrup),,100 ml.,,,,16.85,Patent Medicines
+Patent Medicines,M. Vasaco (Syrup),,200 ml.,,,,31.33,Patent Medicines
+Patent Medicines,M. Vasaco (Syrup),,450 ml.,,,,69.85,Patent Medicines
+Patent Medicines,M.Liv (Syrup),,100 ml.,,,,17.39,Patent Medicines
+Patent Medicines,M.Liv (Syrup),,200 ml.,,,,32.41,Patent Medicines
+Patent Medicines,M.Liv (Syrup),,450 ml.,,,,72.28,Patent Medicines
+Patent Medicines,M.Liv (Tablet/Capsule),,40 T/C,,,,15.55,Patent Medicines
+Patent Medicines,M.Liv (Tablet/Capsule),,1000 T/C,,,,213.62,Patent Medicines
+RASA,Anandbhairava Rasa,,5 gms.,,,,15.62,RASA
+RASA,Anandbhairava Rasa,,100 gms.,,,,208.77,RASA
+RASA,Arsha Kuthar Rasa,,5 gms.,,,,11.2,RASA
+RASA,Arsha Kuthar Rasa,,10 gms.,,,,16.58,RASA
+RASA,Arsha Kuthar Rasa,,100 gms.,,,,120.41,RASA
+RASA,Chandramrita Rasa,,5 gms.,,,,11.64,RASA
+RASA,Chandramrita Rasa,,100 gms.,,,,129.3,RASA
+RASA,Ekangavira Rasa,,2 gms.,,,,11.42,RASA
+RASA,Ekangavira Rasa,,5 gms.,,,,20,RASA
+RASA,Ekangavira Rasa,,100 gms.,,,,296.54,RASA
+RASA,Hydayarnava Rasa,,2 gms.,,,,11.13,RASA
+RASA,Hydayarnava Rasa,,5 gms.,,,,19.3,RASA
+RASA,Hydayarnava Rasa,,100 gms.,,,,282.85,RASA
+RASA,Kamdugha Rasa(Jvar),,5 gms.,,,,9.67,RASA
+RASA,Kamdugha Rasa(Jvar),,100 gms.,,,,89.9,RASA
+RASA,Kamdugha Rasa(Muktayukt),,5 gms.,,,,25.72,RASA
+RASA,Kamdugha Rasa(Muktayukt),,100 gms.,,,,410.81,RASA
+RASA,Krimimudgar Rasa,,5 gms.,,,,12.11,RASA
+RASA,Krimimudgar Rasa,,100 gms.,,,,138.61,RASA
+RASA,Laghu Malini Vasanta Rasa,,5 gms.,,,,22.23,RASA
+RASA,Laghu Malini Vasanta Rasa,,100 gms.,,,,340.95,RASA
+RASA,Laghu Sutashekhara Rasa,,5 gms.,,,,10.26,RASA
+RASA,Laghu Sutashekhara Rasa,,100 gms.,,,,101.63,RASA
+RASA,Lakshmivilasa Rasa(Nardiya),,5 gms.,,,,16.38,RASA
+RASA,Lakshmivilasa Rasa(Nardiya),,100 gms.,,,,223.97,RASA
+RASA,Mritunjaya Rasa,,5 gms.,,,,33,RASA
+RASA,Mritunjaya Rasa,,100 gms.,,,,556.39,RASA
+RASA,Navjivan Rasa,,5 gms.,,,,39.12,RASA
+RASA,Navjivan Rasa,,100 gms.,,,,678.94,RASA
+RASA,Nityodit Rasa,,10 gms.,,,,19.75,RASA
+RASA,Nityodit Rasa,,100 gms.,,,,152.05,RASA
+RASA,Praval Panchamrita Rasa,,2 gms.,,,,7.08,RASA
+RASA,Praval Panchamrita Rasa,,5 gms.,,,,9.15,RASA
+RASA,Shirashuladri Vajra Rasa,,5 gms.,,,,15.41,RASA
+RASA,Shirashuladri Vajra Rasa,,100 gms.,,,,204.62,RASA
+RASA,Shringarabhra Rasa,,5 gms.,,,,11.33,RASA
+RASA,Shringarabhra Rasa,,100 gms.,,,,122.95,RASA
+RASA,Smritisagar Rasa,,5 gms.,,,,25.47,RASA
+RASA,Smritisagar Rasa,,100 gms.,,,,405.89,RASA
+RASA,Sutashekhara Rasa,,5 gms.,,,,13.77,RASA
+RASA,Sutashekhara Rasa,,100 gms.,,,,171.78,RASA
+RASA,Swaskuthara Rasa,,5 gms.,,,,16.06,RASA
+RASA,Swaskuthara Rasa,,100 gms.,,,,217.72,RASA
+RASA,Tribhuvankirti Rasa,,5 gms.,,,,14.9,RASA
+RASA,Tribhuvankirti Rasa,,100 gms.,,,,194.49,RASA
+RASA,Vata Vidhvamsana Rasa,,5 gms.,,,,21.45,RASA
+RASA,Vata Vidhvamsana Rasa,,100 gms.,,,,325.54,RASA
+RAUGHAN,Raughan -e- Baize-e-Murgh,,100 ml.,,,,251.2,RAUGHAN
+RAUGHAN,Raughan-e-Amla,,50 ml.,,,,26.04,RAUGHAN
+RAUGHAN,Raughan-e-Amla,,100 ml.,,,,48.37,RAUGHAN
+RAUGHAN,Raughan-e-Babuna(Sada),,50 ml.,,,,23.95,RAUGHAN
+RAUGHAN,Raughan-e-Laboob-e-Saba,,50 ml.,,,,156.72,RAUGHAN
+RAUGHAN,Raughan-e-Surkh,,25 ml.,,,,33.57,RAUGHAN
+RAUGHAN,Raughan-e-Surkh,,50 ml.,,,,61,RAUGHAN
+RAUGHAN,Raughan-e-Turb,,5 ml.,,,,7.5,RAUGHAN
+SAFOOF,Safoof Chutaki,,50 gm.,,,,31.11,SAFOOF
+SHARBAT,Sharbat Buzoori Motadil,,200 ml.,,,,56,SHARBAT
+SHARBAT,Sharbat Sadar,,200 ml.,,,,83.78,SHARBAT
+SHARBAT,Sharbat-e-Anjabar,,200 ml.,,,,35.02,SHARBAT
+SHARBAT,Sharbat-e-Deenar,,200 ml.,,,,83.89,SHARBAT
+SHARBAT,Sharbat-e-Khaksi,,200 ml.,,,,41.23,SHARBAT
+SHARBAT,Sharbat-e-Unnab,,200 ml.,,,,45.05,SHARBAT
+SHARBAT,Sharbat-e-Zufa Murakkab,,200 ml.,,,,58,SHARBAT
+SHUDDHA DRAVYA,Shuddha Gandhak,,5 gms.,,,,6.52,SHUDDHA DRAVYA
+SHUDDHA DRAVYA,Shuddha Narsar(Choorna),,10 gms.,,,,7.25,SHUDDHA DRAVYA
+SHUDDHA DRAVYA,Shuddha Narsar(Choorna),,1 Kg.,,,,210.15,SHUDDHA DRAVYA
+SHUDDHA DRAVYA,Shuddha Silajatu,,10 gms.,,,,22.5,SHUDDHA DRAVYA
+SHUDDHA DRAVYA,Shuddha Silajatu,,50 gms.,,,,95.16,SHUDDHA DRAVYA
+TAILA,Anu Taila,,10 ml.,,,,13.73,TAILA
+TAILA,Anu Taila,,3 ml.,,,,7.45,TAILA
+TAILA,Anu Taila,,450 ml.,,,,418.4,TAILA
+TAILA,Apamargakshar Taila,,10 ml.,,,,10.38,TAILA
+TAILA,Apamargakshar Taila,,50 ml.,,,,32.29,TAILA
+TAILA,Arimedadi Taila,,10 ml.,,,,19.85,TAILA
+TAILA,Balaguduchydi Taila,,50 ml.,,,,31,TAILA
+TAILA,Balaguduchydi Taila,,450 ml.,,,,256.41,TAILA
+TAILA,Balashvagandhalaksadi Taila,,50 ml.,,,,54.3,TAILA
+TAILA,Balashvagandhalaksadi Taila,,450 ml.,,,,466.03,TAILA
+TAILA,Balashvagandhalaksadi Taila,,1 ltr,,,,1034.96,TAILA
+TAILA,Bhringaraja Taila,,50 ml.,,,,42.26,TAILA
+TAILA,Br. Guduchi Taila,,50 ml.,,,,59.7,TAILA
+TAILA,Br. Guduchi Taila,,450 ml.,,,,514.71,TAILA
+TAILA,Br.Marichadya Taila,,50 ml.,,,,18.6,TAILA
+TAILA,Br.Marichadya Taila,,450 ml.,,,,144.77,TAILA
+TAILA,Br.Saindhavadya Taila,,50 ml.,,,,43.68,TAILA
+TAILA,Br.Saindhavadya Taila,,450 ml.,,,,370.45,TAILA
+TAILA,Chandanabalakshadi Taila,,50 ml.,,,,58.97,TAILA
+TAILA,Chandanabalakshadi Taila,,450 ml.,,,,508.11,TAILA
+TAILA,Dhanvantara Taila,,50 ml.,,,,70.34,TAILA
+TAILA,Dhanvantara Taila,,450 ml.,,,,610.39,TAILA
+TAILA,Dhutturadi Taila,,50 ml.,,,,35.6,TAILA
+TAILA,Erand Taila,,50 ml.,,,,24.67,TAILA
+TAILA,Erand Taila,,450 ml.,,,,199.4,TAILA
+TAILA,Gandharvahasta Taila,,50 ml.,,,,51.6,TAILA
+TAILA,Jatyadi (Ker)Taila,,50 ml.,,,,31.7,TAILA
+TAILA,Jatyadi (Ker)Taila,,450 ml.,,,,262.2,TAILA
+TAILA,Jatyadi Til Taila,,50 ml.,,,,22.04,TAILA
+TAILA,Jatyadi Til Taila,,450 ml.,,,,175.76,TAILA
+TAILA,Kasisadya Taila (Br.),,25 ml.,,,,18.43,TAILA
+TAILA,Kshirabala Taila (Ekapaki),,50 ml.,,,,31.16,TAILA
+TAILA,Kshirabala Taila (Ekapaki),,450 ml.,,,,257.85,TAILA
+TAILA,Kushtharakshas Taila,,50 ml.,,,,37.88,TAILA
+TAILA,Laghuvishagarbha Taila,,50 ml.,,,,23.76,TAILA
+TAILA,Laghuvishagarbha Taila,,450 ml.,,,,191.18,TAILA
+TAILA,Madhuyashtyadi Taila,,50 ml.,,,,64.3,TAILA
+TAILA,Madhuyashtyadi Taila,,450 ml.,,,,556.1,TAILA
+TAILA,Maha Narayana Taila,,50 ml.,,,,136.8,TAILA
+TAILA,Maha Narayana Taila,,100 ml.,,,,269.89,TAILA
+TAILA,Maha Narayana Taila,,450 ml.,,,,1208.53,TAILA
+TAILA,Mahamasha Taila(Samisha),,50 ml.,,,,83.39,TAILA
+TAILA,Mahamasha Taila(Samisha),,450 ml.,,,,727.88,TAILA
+TAILA,Neelibhringyadi (Tila) Taila,,50 ml.,,,,56,TAILA
+TAILA,Neelibhringyadi (Tila) Taila,,450 ml.,,,,459,TAILA
+TAILA,Neelibhringyadi Ker Taila,,50 ml.,,,,66.62,TAILA
+TAILA,Neelibhringyadi Ker Taila,,450 ml.,,,,576.96,TAILA
+TAILA,Nirgundi Taila,,10 ml.,,,,9.35,TAILA
+TAILA,Nirgundi Taila,,450 ml.,,,,222.07,TAILA
+TAILA,Panchaguna Taila,,50 ml.,,,,32.67,TAILA
+TAILA,Panchaguna Taila,,450 ml.,,,,271.45,TAILA
+TAILA,Pinda Taila,,50 ml.,,,,19.08,TAILA
+TAILA,Pinda Taila,,450 ml.,,,,149.07,TAILA
+TAILA,Shadbindu Taila,,10 ml.,,,,10.81,TAILA
+TAILA,Shadbindu Taila,,50 ml.,,,,34.45,TAILA
+TAILA,Shadbindu Taila,,100 ml.,,,,65.22,TAILA
+TAILA,Tuvaraka Taila(Chalmogra),,25 ml.,,,,51.2,TAILA
+VARTI,Chandrodaya Varti,,5 gms.,,,,15.85,VARTI
+VATI & GUTIKA,Agnitundi Vati,,5 gms.,,,,11.17,VATI & GUTIKA
+VATI & GUTIKA,Agnitundi Vati,,500 gms.,,,,572.88,VATI & GUTIKA
+VATI & GUTIKA,Arogyavardhini Gutika,,10 gms.,,,,21.65,VATI & GUTIKA
+VATI & GUTIKA,Arogyavardhini Gutika,,500 gms.,,,,828.79,VATI & GUTIKA
+VATI & GUTIKA,Chandraprabha Vati,,10 gms.,,,,18.77,VATI & GUTIKA
+VATI & GUTIKA,Chandraprabha Vati,,500 gms.,,,,685.17,VATI & GUTIKA
+VATI & GUTIKA,Chandraprabha Vati,,240 Tab.,,,,89.53,VATI & GUTIKA
+VATI & GUTIKA,Chitrakadi Gutika,,10 gms.,,,,11.91,VATI & GUTIKA
+VATI & GUTIKA,Chitrakadi Gutika,,500 gms.,,,,342.1,VATI & GUTIKA
+VATI & GUTIKA,Chitrakadi Gutika,,30 pills.,,,,17.18,VATI & GUTIKA
+VATI & GUTIKA,Eladi Gutika,,10 gms.,,,,12.83,VATI & GUTIKA
+VATI & GUTIKA,Eladi Gutika,,500 gms.,,,,387.91,VATI & GUTIKA
+VATI & GUTIKA,Gandhaka Vati,,10 gms.,,,,19.54,VATI & GUTIKA
+VATI & GUTIKA,Gandhaka Vati,,500 gms.,,,,723.65,VATI & GUTIKA
+VATI & GUTIKA,Kankayan Gutika,,10 gms.,,,,14.22,VATI & GUTIKA
+VATI & GUTIKA,Kankayan Gutika,,500 gms.,,,,457.27,VATI & GUTIKA
+VATI & GUTIKA,Khadiradi Gutika (Mukhrog),,10 gms.,,,,24.11,VATI & GUTIKA
+VATI & GUTIKA,Khadiradi Gutika (Mukhrog),,500 gms.,,,,951.87,VATI & GUTIKA
+VATI & GUTIKA,Khadiradi Gutika(Kasa),,10 gms.,,,,23.94,VATI & GUTIKA
+VATI & GUTIKA,Khadiradi Gutika(Kasa),,500 gms.,,,,943.5,VATI & GUTIKA
+VATI & GUTIKA,Lasunadi Vati,,10 gms.,,,,15.3,VATI & GUTIKA
+VATI & GUTIKA,Lasunadi Vati,,500 gms.,,,,511.32,VATI & GUTIKA
+VATI & GUTIKA,Lavangadi Vati,,10 gms.,,,,17.77,VATI & GUTIKA
+VATI & GUTIKA,Lavangadi Vati,,500 gms.,,,,634.94,VATI & GUTIKA
+VATI & GUTIKA,Lavangadi Vati,,60 Tab.,,,,10.32,VATI & GUTIKA
+VATI & GUTIKA,Mahashankha Vati,,5 gms.,,,,14.19,VATI & GUTIKA
+VATI & GUTIKA,Mahashankha Vati,,500 gms.,,,,874.61,VATI & GUTIKA
+VATI & GUTIKA,Pranda Gutika,,10 gms.,,,,12.76,VATI & GUTIKA
+VATI & GUTIKA,Pranda Gutika,,500 gms.,,,,384.64,VATI & GUTIKA
+VATI & GUTIKA,Rajah Pravartini Vati,,5 gms.,,,,10.3,VATI & GUTIKA
+VATI & GUTIKA,Rajah Pravartini Vati,,100 gms.,,,,102.54,VATI & GUTIKA
+VATI & GUTIKA,Sanjiwani Vati,,5 gms.,,,,9.31,VATI & GUTIKA
+VATI & GUTIKA,Sanjiwani Vati,,500 gms.,,,,386.84,VATI & GUTIKA
+VATI & GUTIKA,Sansamani Vati,,5 gms.,,,,8.75,VATI & GUTIKA
+VATI & GUTIKA,Sansamani Vati,,100 gms.,,,,71.48,VATI & GUTIKA
+VATI & GUTIKA,Shankh Vati,,5 gms.,,,,11.91,VATI & GUTIKA
+VATI & GUTIKA,Shankh Vati,,500 gms.,,,,646.75,VATI & GUTIKA
+VATI & GUTIKA,Sharivadi Vati,,10 gms.,,,,17.48,VATI & GUTIKA
+VATI & GUTIKA,Sharivadi Vati,,100 gms.,,,,129.5,VATI & GUTIKA
+VATI & GUTIKA,Vishmushtika Vati,,5 gms.,,,,12.71,VATI & GUTIKA
+VATI & GUTIKA,Vishmushtika Vati,,100 gms.,,,,150.65,VATI & GUTIKA
+VATI & GUTIKA,Vishtinduk Vati,,5 gms.,,,,9.18,VATI & GUTIKA
+VATI & GUTIKA,Vishtinduk Vati,,100 gms.,,,,80.07,VATI & GUTIKA
+VATI & GUTIKA,Vyoshadi Vati,,10 gms.,,,,11.04,VATI & GUTIKA
+VATI & GUTIKA,Vyoshadi Vati,,100 gms.,,,,65.03,VATI & GUTIKA

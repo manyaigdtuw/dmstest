@@ -1,0 +1,1129 @@
+import React, { useState, useEffect, useContext } from 'react';
+import {
+  FiUsers,
+  FiShoppingBag,
+  FiChevronLeft,
+  FiChevronRight,
+  FiPieChart,
+  FiTrendingUp,
+  FiBox,
+} from 'react-icons/fi';
+import {
+  FaRegHospital,
+  FaPills,
+  FaExclamationTriangle,
+  FaChartLine,
+  FaProcedures,
+  FaClinicMedical,
+  FaHandsHelping,
+} from 'react-icons/fa';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
+import UserContext from '../../../context/UserContext';
+import api from '../../../api/api';
+
+const AnalyticsDashboard = () => {
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const { user } = useContext(UserContext);
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Stats state
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalInstitutes: 0,
+    totalPharmacies: 0,
+    totalDrugs: 0,
+    ipdDrugs: 0,
+    opdDrugs: 0,
+    outreachDrugs: 0,
+    loading: true,
+  });
+
+  // Charts data state
+  const [chartsData, setChartsData] = useState({
+    userRoles: null,
+    drugTypes: null,
+    stockLevels: null,
+    orderStatuses: null,
+    revenueTrends: null,
+    categoryDistribution: null,
+    instituteRevenue: null, // New field for institute revenue
+    loading: true,
+  });
+
+  const [expiringDrugs, setExpiringDrugs] = useState([]);
+  const [drugsLoading, setDrugsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+    daysThreshold: 90,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch stats
+        const statsResponse = await api.get('/analytics/stats');
+        setStats({
+          ...statsResponse.data.stats,
+          loading: false,
+        });
+
+        // Fetch charts data
+        const chartsResponse = await api.get('/analytics/charts');
+        setChartsData({
+          userRoles: chartsResponse.data.charts.userRoles,
+          drugTypes: chartsResponse.data.charts.drugTypes,
+          stockLevels: chartsResponse.data.charts.stockLevels,
+          orderStatuses: chartsResponse.data.charts.orderStatuses,
+          revenueTrends: chartsResponse.data.charts.revenueTrends,
+          categoryDistribution: chartsResponse.data.charts.categoryDistribution,
+          instituteRevenue: chartsResponse.data.charts.instituteRevenue, // New field
+          loading: false,
+        });
+
+        setLastUpdated(new Date());
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setStats((prev) => ({ ...prev, loading: false }));
+        setChartsData((prev) => ({ ...prev, loading: false }));
+      }
+    };
+
+    const fetchExpiringDrugs = async () => {
+      try {
+        setDrugsLoading(true);
+        const response = await api.get('/drugs/expiring', {
+          params: {
+            days: pagination.daysThreshold,
+            page: pagination.page,
+            limit: pagination.limit,
+          },
+        });
+
+        setExpiringDrugs(response.data.drugs);
+        setPagination({
+          ...pagination,
+          total: response.data.total,
+          totalPages: response.data.totalPages,
+        });
+      } catch (error) {
+        console.error(
+          'Failed to fetch drugs:',
+          error.response?.data || error.message
+        );
+      } finally {
+        setDrugsLoading(false);
+      }
+    };
+
+    if (user?.isAuthenticated) {
+      fetchData();
+      fetchExpiringDrugs();
+    }
+  }, [user, pagination.page, pagination.daysThreshold, pagination.limit]);
+
+  const handleDaysChange = (days) => {
+    setPagination((prev) => ({
+      ...prev,
+      daysThreshold: days,
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  // Prepare chart data
+  const userRolesData = {
+    labels: ['Admins', 'Institutes', 'Dispensaries'],
+    datasets: [
+      {
+        data: [
+          chartsData.userRoles?.admin || 0,
+          chartsData.userRoles?.institute || 0,
+          chartsData.userRoles?.pharmacy || 0,
+        ],
+        backgroundColor: [
+          '#3B82F6', // Blue
+          '#10B981', // Green
+          '#8B5CF6', // Purple
+        ],
+        hoverBackgroundColor: ['#2563EB', '#059669', '#7C3AED'],
+      },
+    ],
+  };
+
+  const drugTypesData = {
+    labels: chartsData.drugTypes?.map((item) => item.type) || [],
+    datasets: [
+      {
+        label: 'Drug Count',
+        data: chartsData.drugTypes?.map((item) => item.count) || [],
+        backgroundColor: [
+          '#3B82F6',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6',
+          '#EC4899',
+          '#14B8A6',
+          '#F97316',
+          '#64748B',
+          '#A855F7',
+        ],
+        borderColor: '#fff',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Dynamic height for horizontal bar chart so labels don't squash the plot area on small screens
+  const drugTypesBarHeightPx = Math.max(
+    240,
+    (drugTypesData.labels?.length || 0) * 28
+  );
+
+  const stockLevelsData = {
+    labels: ['Low (<10)', 'Medium (10-50)', 'High (50+)'],
+    datasets: [
+      {
+        data: [
+          chartsData.stockLevels?.low || 0,
+          chartsData.stockLevels?.medium || 0,
+          chartsData.stockLevels?.high || 0,
+        ],
+        backgroundColor: [
+          '#EF4444', // Red
+          '#F59E0B', // Yellow
+          '#10B981', // Green
+        ],
+        hoverBackgroundColor: ['#DC2626', '#D97706', '#059669'],
+      },
+    ],
+  };
+
+  const orderStatusesData = {
+    labels: ['Pending', 'Approved', 'Shipped', 'Rejected', 'Out of Stock'],
+    datasets: [
+      {
+        data: [
+          chartsData.orderStatuses?.pending || 0,
+          chartsData.orderStatuses?.approved || 0,
+          chartsData.orderStatuses?.shipped || 0,
+          chartsData.orderStatuses?.rejected || 0,
+          chartsData.orderStatuses?.out_of_stock || 0,
+        ],
+        backgroundColor: [
+          '#F59E0B', // Yellow
+          '#10B981', // Green
+          '#3B82F6', // Blue
+          '#EF4444', // Red
+          '#9CA3AF', // Gray
+        ],
+        hoverBackgroundColor: [
+          '#D97706',
+          '#059669',
+          '#2563EB',
+          '#DC2626',
+          '#6B7280',
+        ],
+      },
+    ],
+  };
+
+  const revenueTrendsData = {
+    labels: chartsData.revenueTrends?.months || [],
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: chartsData.revenueTrends?.revenue || [],
+        fill: true,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderColor: '#3B82F6',
+        tension: 0.1,
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  // New institute revenue chart data
+  const instituteRevenueData = {
+    labels:
+      chartsData.instituteRevenue?.map((item) =>
+        user?.role === 'admin' ? item.institute_name : item.pharmacy_name
+      ) || [],
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: chartsData.instituteRevenue?.map((item) => item.revenue) || [],
+        backgroundColor: [
+          '#3B82F6',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6',
+          '#EC4899',
+          '#14B8A6',
+          '#F97316',
+          '#64748B',
+          '#A855F7',
+        ],
+        borderColor: '#fff',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const categoryDistributionData = {
+    labels: ['IPD', 'OPD', 'OUTREACH', 'Uncategorized'],
+    datasets: [
+      {
+        data: [
+          chartsData.categoryDistribution?.ipd || 0,
+          chartsData.categoryDistribution?.opd || 0,
+          chartsData.categoryDistribution?.outreach || 0,
+          chartsData.categoryDistribution?.uncategorized || 0,
+        ],
+        backgroundColor: [
+          '#3B82F6', // Blue
+          '#10B981', // Green
+          '#F59E0B', // Yellow
+          '#9CA3AF', // Gray
+        ],
+        hoverBackgroundColor: ['#2563EB', '#059669', '#D97706', '#6B7280'],
+      },
+    ],
+  };
+
+  return (
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="w-full mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+              Admin Analytics Dashboard
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Comprehensive overview of system metrics and statistics
+            </p>
+          </div>
+          <div className="text-xs sm:text-sm text-gray-500 mt-2 md:mt-0">
+            Last updated: {lastUpdated.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs
+          selectedIndex={activeTab}
+          onSelect={(index) => setActiveTab(index)}
+        >
+          <TabList className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200">
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+              <div
+                className={`flex items-center ${
+                  activeTab === 0
+                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    : ''
+                }`}
+              >
+                <FiPieChart className="mr-1 sm:mr-2" />
+                <span className="whitespace-nowrap">Overview</span>
+              </div>
+            </Tab>
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+              <div
+                className={`flex items-center ${
+                  activeTab === 1
+                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    : ''
+                }`}
+              >
+                <FiTrendingUp className="mr-1 sm:mr-2" />
+                <span className="whitespace-nowrap">Trends</span>
+              </div>
+            </Tab>
+            <Tab className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer">
+              <div
+                className={`flex items-center ${
+                  activeTab === 2
+                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    : ''
+                }`}
+              >
+                <FaExclamationTriangle className="mr-1 sm:mr-2" />
+                <span className="whitespace-nowrap">Expiring Drugs</span>
+              </div>
+            </Tab>
+          </TabList>
+
+          {/* Overview Tab */}
+          <TabPanel>
+            <div className="mt-4">
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <StatCard
+                  icon={<FiUsers className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="Total Users"
+                  value={stats.totalUsers}
+                  loading={stats.loading}
+                  color="blue"
+                />
+                <StatCard
+                  icon={<FaRegHospital className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="Institutes"
+                  value={stats.totalInstitutes}
+                  loading={stats.loading}
+                  color="green"
+                />
+                <StatCard
+                  icon={<FiShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="Dispensaries"
+                  value={stats.totalPharmacies}
+                  loading={stats.loading}
+                  color="purple"
+                />
+                <StatCard
+                  icon={<FaPills className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="Total Drugs"
+                  value={stats.totalDrugs}
+                  loading={stats.loading}
+                  color="orange"
+                />
+              </div>
+
+              {/* Category Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <StatCard
+                  icon={<FaProcedures className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="IPD Drugs"
+                  value={stats.ipdDrugs || 0}
+                  loading={stats.loading}
+                  color="red"
+                />
+                <StatCard
+                  icon={<FaClinicMedical className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="OPD Drugs"
+                  value={stats.opdDrugs || 0}
+                  loading={stats.loading}
+                  color="blue"
+                />
+                <StatCard
+                  icon={<FaHandsHelping className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="OUTREACH Drugs"
+                  value={stats.outreachDrugs || 0}
+                  loading={stats.loading}
+                  color="green"
+                />
+              </div>
+
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                {/* User Roles Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    User Distribution
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-64">
+                      <Pie
+                        data={userRolesData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  const label = context.label || '';
+                                  const value = context.raw || 0;
+                                  const total = context.dataset.data.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
+                                      : 0;
+                                  return `${label}: ${value} (${percentage}%)`;
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Drug Types Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    Drug Types Distribution
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div style={{ height: drugTypesBarHeightPx }}>
+                      <Bar
+                        data={drugTypesData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          indexAxis: 'y',
+                          scales: {
+                            x: {
+                              beginAtZero: true,
+                              ticks: { precision: 0 },
+                            },
+                            y: {
+                              ticks: {
+                                autoSkip: false,
+                                font: { size: 10 },
+                                callback: (value) => {
+                                  const label =
+                                    drugTypesData.labels?.[value] ??
+                                    String(value);
+                                  return label.length > 16
+                                    ? label.slice(0, 16) + '…'
+                                    : label;
+                                },
+                              },
+                            },
+                          },
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  const fullLabel = context.label || '';
+                                  return `${fullLabel}: ${context.raw}`;
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Stock Levels Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    Drug Stock Levels
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-64">
+                      <Pie
+                        data={stockLevelsData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  const label = context.label || '';
+                                  const value = context.raw || 0;
+                                  const total = context.dataset.data.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
+                                      : 0;
+                                  return `${label}: ${value} (${percentage}%)`;
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Order Statuses Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    Order Status Distribution
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-64">
+                      <Pie
+                        data={orderStatusesData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  const label = context.label || '';
+                                  const value = context.raw || 0;
+                                  const total = context.dataset.data.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
+                                      : 0;
+                                  return `${label}: ${value} (${percentage}%)`;
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          {/* Trends Tab */}
+          <TabPanel>
+            <div className="mt-4">
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                {/* Institute Revenue Chart - New Chart */}
+                {/* Institute Revenue Chart - New Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    {user?.role === 'admin'
+                      ? 'Institute-wise Revenue'
+                      : 'Pharmacy-wise Revenue'}
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-72 sm:h-96">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        height: Math.max(
+                          240,
+                          (instituteRevenueData.labels?.length || 0) * 28
+                        ),
+                      }}
+                    >
+                      <Bar
+                        data={instituteRevenueData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          indexAxis: 'y', // Make it horizontal
+                          scales: {
+                            x: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function (value) {
+                                  return '₹' + value.toLocaleString();
+                                },
+                              },
+                            },
+                            y: {
+                              ticks: {
+                                autoSkip: false,
+                                font: { size: 10 },
+                                callback: (value) => {
+                                  const label =
+                                    instituteRevenueData.labels?.[value] ??
+                                    String(value);
+                                  return label.length > 16
+                                    ? label.slice(0, 16) + '…'
+                                    : label;
+                                },
+                              },
+                            },
+                          },
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  return (
+                                    'Revenue: ₹' +
+                                    context.parsed.x.toLocaleString()
+                                  );
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Revenue Trends Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    Revenue Trends (Last 6 Months)
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-72 sm:h-96">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-72 sm:h-96">
+                      <Line
+                        data={revenueTrendsData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function (value) {
+                                  return '₹' + value.toLocaleString();
+                                },
+                              },
+                            },
+                          },
+                          plugins: {
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  return (
+                                    'Revenue: ₹' +
+                                    context.parsed.y.toLocaleString()
+                                  );
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Category Distribution Chart */}
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
+                    Drug Category Distribution
+                  </h3>
+                  {chartsData.loading ? (
+                    <div className="flex justify-center items-center h-48 sm:h-64">
+                      <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div className="h-48 sm:h-64">
+                      <Pie
+                        data={categoryDistributionData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function (context) {
+                                  const label = context.label || '';
+                                  const value = context.raw || 0;
+                                  const total = context.dataset.data.reduce(
+                                    (a, b) => a + b,
+                                    0
+                                  );
+                                  const percentage =
+                                    total > 0
+                                      ? parseFloat(((value / total) * 100).toFixed(1))
+                                      : 0;
+                                  return `${label}: ${value} (${percentage}%)`;
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          {/* Expiring Drugs Tab */}
+          <TabPanel>
+            <div className="mt-4">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-gray-50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center mb-2 sm:mb-0">
+                      <FaExclamationTriangle className="text-yellow-500 mr-2 sm:mr-3 text-base sm:text-lg" />
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                        Drugs Expiring Within
+                        <select
+                          value={pagination.daysThreshold}
+                          onChange={(e) =>
+                            handleDaysChange(Number(e.target.value))
+                          }
+                          className="ml-2 sm:ml-3 border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value={10}>10 Days</option>
+                          <option value={30}>30 Days</option>
+                          <option value={60}>60 Days</option>
+                          <option value={90}>90 Days</option>
+                        </select>
+                      </h3>
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      Showing {(pagination.page - 1) * pagination.limit + 1}-
+                      {Math.min(
+                        pagination.page * pagination.limit,
+                        pagination.total
+                      )}{' '}
+                      of {pagination.total} drugs
+                    </div>
+                  </div>
+                </div>
+
+                {drugsLoading ? (
+                  <div className="flex justify-center items-center h-48 sm:h-64">
+                    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Drug Name
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Batch
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Stock
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Expiry Date
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Days Left
+                            </th>
+                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Price (₹)
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {expiringDrugs.length > 0 ? (
+                            expiringDrugs.map((drug) => (
+                              <tr
+                                key={`${drug.id}-${drug.batch_no}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-4 sm:px-6 py-4">
+                                  <div className="font-medium text-sm sm:text-base text-gray-900">
+                                    {drug.name}
+                                  </div>
+                                  <div className="text-xs sm:text-sm text-gray-500">
+                                    {drug.description}
+                                  </div>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                                  {drug.batch_no || 'N/A'}
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full ${
+                                      drug.stock < 10
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-green-100 text-green-800'
+                                    }`}
+                                  >
+                                    {drug.stock} units
+                                  </span>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                                  {new Date(drug.exp_date).toLocaleDateString(
+                                    'en-US',
+                                    {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    }
+                                  )}
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full ${
+                                      drug.days_until_expiry < 7
+                                        ? 'bg-red-100 text-red-800'
+                                        : drug.days_until_expiry < 30
+                                        ? 'bg-orange-100 text-orange-800'
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}
+                                  >
+                                    {drug.days_until_expiry} days
+                                  </span>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                                  {typeof drug.price === 'number'
+                                    ? drug.price.toLocaleString('en-IN', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })
+                                    : drug.price}
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td
+                                colSpan="6"
+                                className="px-4 sm:px-6 py-8 text-center"
+                              >
+                                <div className="flex flex-col items-center justify-center text-gray-500">
+                                  <FaExclamationTriangle className="h-8 w-8 sm:h-10 sm:w-10 mb-2 text-yellow-400" />
+                                  <h4 className="text-base sm:text-lg font-medium">
+                                    No expiring drugs found
+                                  </h4>
+                                  <p className="text-xs sm:text-sm">
+                                    Try adjusting your days threshold
+                                  </p>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    {pagination.totalPages > 1 && (
+                      <div className="px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 flex justify-between sm:hidden">
+                            <button
+                              onClick={() =>
+                                handlePageChange(pagination.page - 1)
+                              }
+                              disabled={pagination.page === 1}
+                              className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Previous
+                            </button>
+                            <button
+                              onClick={() =>
+                                handlePageChange(pagination.page + 1)
+                              }
+                              disabled={
+                                pagination.page >= pagination.totalPages
+                              }
+                              className="ml-3 relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Next
+                            </button>
+                          </div>
+                          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-xs sm:text-sm text-gray-700">
+                                Page{' '}
+                                <span className="font-medium">
+                                  {pagination.page}
+                                </span>{' '}
+                                of{' '}
+                                <span className="font-medium">
+                                  {pagination.totalPages}
+                                </span>
+                              </p>
+                            </div>
+                            <div>
+                              <nav
+                                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                aria-label="Pagination"
+                              >
+                                <button
+                                  onClick={() =>
+                                    handlePageChange(pagination.page - 1)
+                                  }
+                                  disabled={pagination.page === 1}
+                                  className="relative inline-flex items-center px-2 py-1.5 rounded-l-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <span className="sr-only">Previous</span>
+                                  <FiChevronLeft
+                                    className="h-4 w-4 sm:h-5 sm:w-5"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                                {Array.from(
+                                  {
+                                    length: Math.min(5, pagination.totalPages),
+                                  },
+                                  (_, i) => {
+                                    let pageNum;
+                                    if (pagination.totalPages <= 5) {
+                                      pageNum = i + 1;
+                                    } else if (pagination.page <= 3) {
+                                      pageNum = i + 1;
+                                    } else if (
+                                      pagination.page >=
+                                      pagination.totalPages - 2
+                                    ) {
+                                      pageNum = pagination.totalPages - 4 + i;
+                                    } else {
+                                      pageNum = pagination.page - 2 + i;
+                                    }
+                                    return (
+                                      <button
+                                        key={pageNum}
+                                        onClick={() =>
+                                          handlePageChange(pageNum)
+                                        }
+                                        className={`relative inline-flex items-center px-3 py-1.5 border text-xs font-medium ${
+                                          pagination.page === pageNum
+                                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {pageNum}
+                                      </button>
+                                    );
+                                  }
+                                )}
+                                <button
+                                  onClick={() =>
+                                    handlePageChange(pagination.page + 1)
+                                  }
+                                  disabled={
+                                    pagination.page >= pagination.totalPages
+                                  }
+                                  className="relative inline-flex items-center px-2 py-1.5 rounded-r-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <span className="sr-only">Next</span>
+                                  <FiChevronRight
+                                    className="h-4 w-4 sm:h-5 sm:w-5"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              </nav>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </TabPanel>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ icon, title, value, loading, color = 'blue' }) => {
+  const colorClasses = {
+    blue: {
+      bg: 'bg-blue-50',
+      text: 'text-blue-600',
+      iconBg: 'bg-blue-100',
+    },
+    green: {
+      bg: 'bg-green-50',
+      text: 'text-green-600',
+      iconBg: 'bg-green-100',
+    },
+    purple: {
+      bg: 'bg-purple-50',
+      text: 'text-purple-600',
+      iconBg: 'bg-purple-100',
+    },
+    orange: {
+      bg: 'bg-orange-50',
+      text: 'text-orange-600',
+      iconBg: 'bg-orange-100',
+    },
+    red: {
+      bg: 'bg-red-50',
+      text: 'text-red-600',
+      iconBg: 'bg-red-100',
+    },
+    yellow: {
+      bg: 'bg-yellow-50',
+      text: 'text-yellow-600',
+      iconBg: 'bg-yellow-100',
+    },
+  };
+
+  // Add fallback in case an invalid color is provided
+  const selectedColor = colorClasses[color] || colorClasses.blue;
+
+  return (
+    <div
+      className={`${selectedColor.bg} p-4 sm:p-5 rounded-lg shadow-sm border border-gray-200 transition-all hover:shadow-md`}
+    >
+      <div className="flex items-start">
+        <div
+          className={`${selectedColor.iconBg} p-2 sm:p-3 rounded-lg mr-3 sm:mr-4`}
+        >
+          {icon}
+        </div>
+        <div className="flex-1">
+          <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">
+            {title}
+          </p>
+          {loading ? (
+            <div className="h-6 sm:h-8 w-16 sm:w-20 bg-gray-200 rounded animate-pulse"></div>
+          ) : (
+            <div className="flex items-end justify-between">
+              <h3
+                className={`text-xl sm:text-2xl font-bold ${selectedColor.text}`}
+              >
+                {value}
+              </h3>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnalyticsDashboard;

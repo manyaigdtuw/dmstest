@@ -1,0 +1,136 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  street TEXT NOT NULL,
+  city TEXT NOT NULL,
+  state TEXT NOT NULL,
+  postal_code TEXT NOT NULL,
+  country TEXT DEFAULT 'India',
+
+  status TEXT NOT NULL DEFAULT 'Pending'
+    CHECK (status IN ('Active', 'Pending')),
+
+  registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  license_number TEXT NOT NULL UNIQUE,
+
+  role TEXT NOT NULL DEFAULT 'pharmacy'
+    CHECK (role IN ('admin', 'institute', 'pharmacy')),
+
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS drugs (
+    id SERIAL PRIMARY KEY,
+    drug_type TEXT,
+    name TEXT NOT NULL,
+    batch_no TEXT,
+    description TEXT,
+    stock INTEGER DEFAULT 0,
+    mfg_date DATE NOT NULL,
+    exp_date DATE NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Orders table (main order container)
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  order_no TEXT NOT NULL UNIQUE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  recipient_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  transaction_type TEXT NOT NULL CHECK (transaction_type IN ('institute', 'manufacturer', 'pharmacy')),
+  notes TEXT,
+  total_amount DECIMAL(12,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order items (individual drugs in the order)
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  drug_id INTEGER REFERENCES drugs(id) ON DELETE SET NULL,
+  custom_name TEXT,
+  manufacturer_name TEXT,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price DECIMAL(10,2),
+  total_price DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
+  source_type TEXT CHECK (source_type IN ('institute', 'manufacturer')),
+  category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
+  batch_no TEXT,
+  seller_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'out_of_stock', 'rejected', 'shipped')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Create drug_types table
+CREATE TABLE drug_types (
+  id SERIAL PRIMARY KEY,
+  type_name VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create drug_names table
+CREATE TABLE drug_names (
+  id SERIAL PRIMARY KEY,
+  type_id INTEGER REFERENCES drug_types(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(type_id, name)
+);
+
+--create a table for the rate limiter
+CREATE TABLE rate_limiter (
+  key text PRIMARY KEY,
+  points integer NOT NULL,
+  expire bigint NOT NULL
+);
+
+CREATE INDEX idx_rate_limiter_expire ON rate_limiter (expire);
+
+CREATE TABLE login_logs (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  email VARCHAR(255) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL,
+  user_agent TEXT,
+  status VARCHAR(20) NOT NULL, -- 'success', 'failed', 'blocked'
+  attempt_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  failure_reason VARCHAR(255)
+);
+
+CREATE INDEX idx_login_logs_email ON login_logs(email);
+CREATE INDEX idx_login_logs_time ON login_logs(attempt_time);
+
+CREATE TABLE daily_dispensing_summary (
+    id SERIAL PRIMARY KEY,
+    drug_id INTEGER REFERENCES drugs(id) ON DELETE CASCADE,
+    quantity_dispensed INTEGER NOT NULL,
+    dispensing_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    category VARCHAR(50) CHECK (category IN ('IPD', 'OPD', 'OUTREACH')),
+    notes TEXT,
+    recorded_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Ensure only one record per drug per day per category
+    UNIQUE(drug_id, dispensing_date, category)
+);
+
+
+CREATE INDEX idx_dispensing_summary_date ON daily_dispensing_summary(dispensing_date);
+CREATE INDEX idx_dispensing_summary_drug_date ON daily_dispensing_summary(drug_id, dispensing_date);
