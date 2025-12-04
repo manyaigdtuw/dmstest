@@ -16,7 +16,7 @@ import InstitutesTable from './users/InstitutesTable';
 import DrugsTable from './drugs/DrugsTable';
 import AdminSettings from './AdminSettings';
 import UserContext from '../../../context/UserContext';
-import logo from '../../../assets/logo.jpeg';
+import logo from '../../../assets/logo.png';
 import { MdBorderColor } from 'react-icons/md';
 import ProfileModal from '../ProfileModal';
 import AdminOrderHistory from './orders/AdminOrderHistory';

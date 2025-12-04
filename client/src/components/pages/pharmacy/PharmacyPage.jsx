@@ -17,7 +17,7 @@ import PharmacyOrderPage from './orders/PharmacyOrderPage';
 import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
 import DailyDispensing from './DailyDispensing'; // ✅ Added import
 import UserContext from '../../../context/UserContext';
-import logo from '../../../assets/logo.jpeg';
+import logo from '../../../assets/logo.png';
 import ProfileModal from '../ProfileModal';
 import api from '../../../api/api';
 import { NavLink, Routes, Route, Navigate } from 'react-router-dom';

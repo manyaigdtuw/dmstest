@@ -16,7 +16,7 @@ import DrugsTable from './drugs/DrugsTable';
 import PharmaciesTable from './users/PharmaciesTable';
 import UserContext from '../../../context/UserContext';
 import InstituteSettings from './InstituteSettings';
-import logo from '../../../assets/logo.jpeg';
+import logo from '../../../assets/logo.png';
 import OrderPage from './orders/OrderPage';
 import SellerPage from './orders/SellerPage';
 import OrderHistory from './orders/OrderHistory';

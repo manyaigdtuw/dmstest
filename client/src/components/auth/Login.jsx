@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserContext from '../../context/UserContext';
-import backgroundImage from '../../assets/logo.jpeg';
+import backgroundImage from '../../assets/logo.png';
 import api from '../../api/api';
 
 const Login = () => {

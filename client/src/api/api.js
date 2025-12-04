@@ -2,8 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
   
-  baseURL: ' https://dms.DEMO.org.in/api',
-  //baseURL: ' http://127.0.0.1:8080/api',
+  //baseURL: ' http://localhost:3000/api',
+  //baseURL: 'http://0.0.0.0:3000/api',
+baseURL: 'http://localhost:8080/api',
   //baseURL: 'https://dms-cytr.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
