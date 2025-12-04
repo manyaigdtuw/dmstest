@@ -11,6 +11,17 @@ const recordDailyDispensing = async (req, res) => {
   } = req.body;
 
   try {
+    // Validate date - only allow current date
+    const currentDate = new Date().toISOString().split('T')[0];
+    const requestedDate = dispensing_date || currentDate;
+    
+    if (requestedDate !== currentDate) {
+      return res.status(400).json({
+        status: false,
+        message: `Entries can only be made for the current date (${currentDate})`
+      });
+    }
+
     await db.query('BEGIN');
 
     // Check drug availability and ownership
@@ -42,7 +53,7 @@ const recordDailyDispensing = async (req, res) => {
     const existingRecord = await db.query(
       `SELECT id, quantity_dispensed FROM daily_dispensing_summary 
        WHERE drug_id = $1 AND dispensing_date = $2 AND category = $3`,
-      [drug_id, dispensing_date || new Date(), category || 'OPD']
+      [drug_id, currentDate, category || 'OPD']
     );
 
     let result;
@@ -84,7 +95,7 @@ const recordDailyDispensing = async (req, res) => {
         [
           drug_id,
           quantity_dispensed,
-          dispensing_date || new Date(),
+          currentDate,
           category || 'OPD',
           notes,
           userId
@@ -127,6 +138,176 @@ const recordDailyDispensing = async (req, res) => {
     res.status(500).json({
       status: false,
       message: 'Server error while recording dispensing',
+      error: err.message
+    });
+  }
+};
+
+const importDispensingRecords = async (req, res) => {
+  const db = req.app.locals.db;
+  const userId = req.user.id;
+  
+  const {
+    dispensing_date = new Date().toISOString().split('T')[0],
+    category = 'OPD'
+  } = req.body;
+
+  try {
+    // Validate date - only allow current date
+    const currentDate = new Date().toISOString().split('T')[0];
+    if (dispensing_date !== currentDate) {
+      return res.status(400).json({
+        status: false,
+        message: `Entries can only be imported for the current date (${currentDate})`
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        status: false,
+        message: 'No CSV file uploaded'
+      });
+    }
+
+    const csv = require('csv-parser');
+    const fs = require('fs');
+    const results = [];
+    const errors = [];
+
+    // Parse CSV file
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    await db.query('BEGIN');
+
+    let importedCount = 0;
+
+    for (const [index, record] of results.entries()) {
+      try {
+        const { drug_name, quantity_dispensed, notes = '' } = record;
+
+        // Validate required fields
+        if (!drug_name || !quantity_dispensed) {
+          errors.push(`Row ${index + 1}: Missing required fields (drug_name, quantity_dispensed)`);
+          continue;
+        }
+
+        // Validate quantity
+        const quantity = parseInt(quantity_dispensed);
+        if (isNaN(quantity) || quantity <= 0) {
+          errors.push(`Row ${index + 1}: Invalid quantity '${quantity_dispensed}'`);
+          continue;
+        }
+
+        // Find drug by name (case insensitive)
+        const drugResult = await db.query(
+          'SELECT id, name, stock FROM drugs WHERE LOWER(name) = LOWER($1) AND created_by = $2',
+          [drug_name.trim(), userId]
+        );
+
+        if (drugResult.rows.length === 0) {
+          errors.push(`Row ${index + 1}: Drug '${drug_name}' not found in your inventory`);
+          continue;
+        }
+
+        const drug = drugResult.rows[0];
+
+        // Check stock availability
+        if (drug.stock < quantity) {
+          errors.push(`Row ${index + 1}: Insufficient stock for '${drug_name}'. Available: ${drug.stock}, Required: ${quantity}`);
+          continue;
+        }
+
+        // Check if record already exists for today and category
+        const existingRecord = await db.query(
+          `SELECT id, quantity_dispensed FROM daily_dispensing_summary 
+           WHERE drug_id = $1 AND dispensing_date = $2 AND category = $3`,
+          [drug.id, currentDate, category]
+        );
+
+        if (existingRecord.rows.length > 0) {
+          // Update existing record
+          const existing = existingRecord.rows[0];
+          const quantityDifference = quantity - existing.quantity_dispensed;
+
+          // Check if we have enough stock for the update
+          if (drug.stock < quantityDifference) {
+            errors.push(`Row ${index + 1}: Insufficient stock for update. Available: ${drug.stock}, Additional needed: ${quantityDifference}`);
+            continue;
+          }
+
+          await db.query(
+            `UPDATE daily_dispensing_summary 
+             SET quantity_dispensed = $1, notes = $2, updated_at = NOW()
+             WHERE id = $3`,
+            [quantity, notes, existing.id]
+          );
+
+          // Update drug stock
+          await db.query(
+            'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
+            [quantityDifference, drug.id]
+          );
+        } else {
+          // Create new record
+          await db.query(
+            `INSERT INTO daily_dispensing_summary 
+             (drug_id, quantity_dispensed, dispensing_date, category, notes, recorded_by)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              drug.id,
+              quantity,
+              currentDate,
+              category,
+              notes,
+              userId
+            ]
+          );
+
+          // Update drug stock
+          await db.query(
+            'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
+            [quantity, drug.id]
+          );
+        }
+
+        importedCount++;
+
+      } catch (rowError) {
+        errors.push(`Row ${index + 1}: ${rowError.message}`);
+      }
+    }
+
+    await db.query('COMMIT');
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).json({
+      status: true,
+      message: `Import completed. ${importedCount} records imported successfully.`,
+      imported: importedCount,
+      total: results.length,
+      errors: errors
+    });
+
+  } catch (err) {
+    await db.query('ROLLBACK');
+    
+    // Clean up uploaded file in case of error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    console.error('CSV import error:', err);
+    res.status(500).json({
+      status: false,
+      message: 'Server error while importing CSV',
       error: err.message
     });
   }
@@ -349,166 +530,7 @@ const deleteDispensingRecord = async (req, res) => {
   }
 };
 
-const importDispensingRecords = async (req, res) => {
-  const db = req.app.locals.db;
-  const userId = req.user.id;
-  
-  const {
-    dispensing_date = new Date().toISOString().split('T')[0],
-    category = 'OPD'
-  } = req.body;
 
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        status: false,
-        message: 'No CSV file uploaded'
-      });
-    }
-
-    const csv = require('csv-parser');
-    const fs = require('fs');
-    const results = [];
-    const errors = [];
-
-    // Parse CSV file
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(req.file.path)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', resolve)
-        .on('error', reject);
-    });
-
-    await db.query('BEGIN');
-
-    let importedCount = 0;
-
-    for (const [index, record] of results.entries()) {
-      try {
-        const { drug_name, quantity_dispensed, notes = '' } = record;
-
-        // Validate required fields
-        if (!drug_name || !quantity_dispensed) {
-          errors.push(`Row ${index + 1}: Missing required fields (drug_name, quantity_dispensed)`);
-          continue;
-        }
-
-        // Validate quantity
-        const quantity = parseInt(quantity_dispensed);
-        if (isNaN(quantity) || quantity <= 0) {
-          errors.push(`Row ${index + 1}: Invalid quantity '${quantity_dispensed}'`);
-          continue;
-        }
-
-        // Find drug by name (case insensitive)
-        const drugResult = await db.query(
-          'SELECT id, name, stock FROM drugs WHERE LOWER(name) = LOWER($1) AND created_by = $2',
-          [drug_name.trim(), userId]
-        );
-
-        if (drugResult.rows.length === 0) {
-          errors.push(`Row ${index + 1}: Drug '${drug_name}' not found in your inventory`);
-          continue;
-        }
-
-        const drug = drugResult.rows[0];
-
-        // Check stock availability
-        if (drug.stock < quantity) {
-          errors.push(`Row ${index + 1}: Insufficient stock for '${drug_name}'. Available: ${drug.stock}, Required: ${quantity}`);
-          continue;
-        }
-
-        // Check if record already exists for this date and category
-        const existingRecord = await db.query(
-          `SELECT id, quantity_dispensed FROM daily_dispensing_summary 
-           WHERE drug_id = $1 AND dispensing_date = $2 AND category = $3`,
-          [drug.id, dispensing_date, category]
-        );
-
-        if (existingRecord.rows.length > 0) {
-          // Update existing record
-          const existing = existingRecord.rows[0];
-          const quantityDifference = quantity - existing.quantity_dispensed;
-
-          // Check if we have enough stock for the update
-          if (drug.stock < quantityDifference) {
-            errors.push(`Row ${index + 1}: Insufficient stock for update. Available: ${drug.stock}, Additional needed: ${quantityDifference}`);
-            continue;
-          }
-
-          await db.query(
-            `UPDATE daily_dispensing_summary 
-             SET quantity_dispensed = $1, notes = $2, updated_at = NOW()
-             WHERE id = $3`,
-            [quantity, notes, existing.id]
-          );
-
-          // Update drug stock
-          await db.query(
-            'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
-            [quantityDifference, drug.id]
-          );
-        } else {
-          // Create new record
-          await db.query(
-            `INSERT INTO daily_dispensing_summary 
-             (drug_id, quantity_dispensed, dispensing_date, category, notes, recorded_by)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [
-              drug.id,
-              quantity,
-              dispensing_date,
-              category,
-              notes,
-              userId
-            ]
-          );
-
-          // Update drug stock
-          await db.query(
-            'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
-            [quantity, drug.id]
-          );
-        }
-
-        importedCount++;
-
-      } catch (rowError) {
-        errors.push(`Row ${index + 1}: ${rowError.message}`);
-      }
-    }
-
-    await db.query('COMMIT');
-
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
-
-    res.status(200).json({
-      status: true,
-      message: `Import completed. ${importedCount} records imported successfully.`,
-      imported: importedCount,
-      total: results.length,
-      errors: errors
-    });
-
-  } catch (err) {
-    await db.query('ROLLBACK');
-    
-    // Clean up uploaded file in case of error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
-    console.error('CSV import error:', err);
-    res.status(500).json({
-      status: false,
-      message: 'Server error while importing CSV',
-      error: err.message
-    });
-  }
-};
 
 
 module.exports = {

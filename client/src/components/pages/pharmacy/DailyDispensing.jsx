@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSyringe, FaPills, FaUndo, FaFileImport } from 'react-icons/fa';
-import { FiPlus, FiCalendar, FiTrash2, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiTrash2, FiDownload, FiEye } from 'react-icons/fi';
 import api from '../../../api/api';
 
 const DailyDispensing = () => {
@@ -12,6 +12,7 @@ const DailyDispensing = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('today'); // 'today' or 'history'
   
   const [dispensingForm, setDispensingForm] = useState({
     drug_id: '',
@@ -19,11 +20,21 @@ const DailyDispensing = () => {
     notes: ''
   });
 
-  // Fetch drugs and today's records
+  const isCurrentDate = selectedDate === new Date().toISOString().split('T')[0];
+
+  // Fetch drugs
   useEffect(() => {
     fetchDrugs();
-    fetchTodayDispensing();
-  }, [selectedDate, category]);
+  }, []);
+
+  // Fetch records based on view mode
+  useEffect(() => {
+    if (viewMode === 'today' && isCurrentDate) {
+      fetchTodayDispensing();
+    } else {
+      fetchHistoryDispensing();
+    }
+  }, [selectedDate, category, viewMode]);
 
   const fetchDrugs = async () => {
     try {
@@ -37,6 +48,21 @@ const DailyDispensing = () => {
   };
 
   const fetchTodayDispensing = async () => {
+    if (!isCurrentDate) return;
+    
+    try {
+      const response = await api.get('/daily-dispensing', {
+        params: { date: selectedDate, category }
+      });
+      if (response.data.records) {
+        setTodayRecords(response.data.records);
+      }
+    } catch (error) {
+      console.error('Error fetching dispensing records:', error);
+    }
+  };
+
+  const fetchHistoryDispensing = async () => {
     try {
       const response = await api.get('/daily-dispensing', {
         params: { date: selectedDate, category }
@@ -53,6 +79,11 @@ const DailyDispensing = () => {
     e.preventDefault();
     if (!dispensingForm.drug_id) {
       alert('Please select a drug');
+      return;
+    }
+
+    if (!isCurrentDate) {
+      alert('Entries can only be made for the current date. Please select today\'s date.');
       return;
     }
 
@@ -83,6 +114,11 @@ const DailyDispensing = () => {
   };
 
   const handleDeleteRecord = async (recordId) => {
+    if (!isCurrentDate) {
+      alert('Only today\'s records can be deleted.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this dispensing record? Stock will be restored.')) {
       return;
     }
@@ -102,6 +138,11 @@ const DailyDispensing = () => {
     e.preventDefault();
     if (!importFile) {
       alert('Please select a CSV file to import');
+      return;
+    }
+
+    if (!isCurrentDate) {
+      alert('Entries can only be imported for the current date. Please select today\'s date.');
       return;
     }
 
@@ -179,21 +220,53 @@ Vitamin B Complex,8,Outreach program`;
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-1"
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
-            >
-              <FaFileImport className="h-4 w-4" />
-              Import CSV
-            </button>
+            
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-md p-1">
+              <button
+                onClick={() => setViewMode('today')}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'today' ? 'bg-white shadow-sm' : 'text-gray-600'}`}
+              >
+                <FiPlus className="inline mr-1" /> Today's Entry
+              </button>
+              <button
+                onClick={() => setViewMode('history')}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${viewMode === 'history' ? 'bg-white shadow-sm' : 'text-gray-600'}`}
+              >
+                <FiEye className="inline mr-1" /> View History
+              </button>
+            </div>
+
+            {isCurrentDate && viewMode === 'today' && (
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
+              >
+                <FaFileImport className="h-4 w-4" />
+                Import CSV
+              </button>
+            )}
           </div>
         </div>
 
+        {/* Mode Indicator */}
+        {!isCurrentDate && viewMode === 'today' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+            <div className="flex items-center">
+              <FaUndo className="text-yellow-600 mr-2" />
+              <span className="text-yellow-700">
+                <strong>View Mode Only:</strong> You are viewing past records. To make entries, please select today's date ({new Date().toISOString().split('T')[0]}) and switch to "Today's Entry" mode.
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Today's Summary */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{todayRecords.length}</div>
               <div className="text-sm text-gray-600">Drugs Dispensed</div>
@@ -205,6 +278,12 @@ Vitamin B Complex,8,Outreach program`;
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{category}</div>
               <div className="text-sm text-gray-600">Current Category</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${isCurrentDate ? 'text-green-600' : 'text-gray-400'}`}>
+                {isCurrentDate ? 'Entry Enabled' : 'View Only'}
+              </div>
+              <div className="text-sm text-gray-600">Mode</div>
             </div>
             <div className="text-center">
               <button
@@ -219,113 +298,122 @@ Vitamin B Complex,8,Outreach program`;
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Record Dispensing Form */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <FiPlus className="mr-2 text-blue-600" />
-                Record Dispensing
-              </h3>
-              
-              <form onSubmit={handleRecordDispensing}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="OPD">OPD</option>
-                      <option value="IPD">IPD</option>
-                      <option value="OUTREACH">OUTREACH</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Drug
-                    </label>
-                    <select
-                      value={dispensingForm.drug_id}
-                      onChange={(e) => setDispensingForm(prev => ({
-                        ...prev,
-                        drug_id: e.target.value
-                      }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="">Choose a drug...</option>
-                      {drugs.map(drug => (
-                        <option key={drug.id} value={drug.id}>
-                          {drug.name} (Stock: {drug.stock}, Batch: {drug.batch_no})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Quantity Dispensed
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={dispensingForm.quantity_dispensed}
-                      onChange={(e) => setDispensingForm(prev => ({
-                        ...prev,
-                        quantity_dispensed: parseInt(e.target.value) || 1
-                      }))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notes (Optional)
-                    </label>
-                    <textarea
-                      value={dispensingForm.notes}
-                      onChange={(e) => setDispensingForm(prev => ({
-                        ...prev,
-                        notes: e.target.value
-                      }))}
-                      rows="2"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {dispensingForm.drug_id && (
-                    <div className="bg-blue-50 p-3 rounded-md">
-                      <div className="text-sm text-blue-700">
-                        Current Stock: <strong>{getDrugStock(dispensingForm.drug_id)}</strong><br />
-                        After Dispensing: <strong>{getDrugStock(dispensingForm.drug_id) - dispensingForm.quantity_dispensed}</strong>
-                      </div>
+          {/* Record Dispensing Form - Only shown for today */}
+          {isCurrentDate && viewMode === 'today' ? (
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <FiPlus className="mr-2 text-blue-600" />
+                  Record Dispensing
+                </h3>
+                
+                <form onSubmit={handleRecordDispensing}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="OPD">OPD</option>
+                        <option value="IPD">IPD</option>
+                        <option value="OUTREACH">OUTREACH</option>
+                      </select>
                     </div>
-                  )}
 
-                  <button
-                    type="submit"
-                    disabled={isLoading || !dispensingForm.drug_id}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? 'Recording...' : 'Record Dispensing'}
-                  </button>
-                </div>
-              </form>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Select Drug
+                      </label>
+                      <select
+                        value={dispensingForm.drug_id}
+                        onChange={(e) => setDispensingForm(prev => ({
+                          ...prev,
+                          drug_id: e.target.value
+                        }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Choose a drug...</option>
+                        {drugs.map(drug => (
+                          <option key={drug.id} value={drug.id}>
+                            {drug.name} (Stock: {drug.stock}, Batch: {drug.batch_no})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Quantity Dispensed
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={dispensingForm.quantity_dispensed}
+                        onChange={(e) => setDispensingForm(prev => ({
+                          ...prev,
+                          quantity_dispensed: parseInt(e.target.value) || 1
+                        }))}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes (Optional)
+                      </label>
+                      <textarea
+                        value={dispensingForm.notes}
+                        onChange={(e) => setDispensingForm(prev => ({
+                          ...prev,
+                          notes: e.target.value
+                        }))}
+                        rows="2"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    {dispensingForm.drug_id && (
+                      <div className="bg-blue-50 p-3 rounded-md">
+                        <div className="text-sm text-blue-700">
+                          Current Stock: <strong>{getDrugStock(dispensingForm.drug_id)}</strong><br />
+                          After Dispensing: <strong>{getDrugStock(dispensingForm.drug_id) - dispensingForm.quantity_dispensed}</strong>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || !dispensingForm.drug_id}
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? 'Recording...' : 'Record Dispensing'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
+          ) : (
+            
+            <div className="lg:col-span-1">
+            </div>
+          )}
 
-          {/* Today's Dispensing Records */}
-          <div className="lg:col-span-2">
+          {/* Dispensing Records */}
+          <div className={`${isCurrentDate && viewMode === 'today' ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                   <FaPills className="mr-2 text-green-600" />
-                  Today's Dispensing ({selectedDate}) - {category}
+                  {viewMode === 'today' ? `Today's Dispensing` : 'Dispensing Records'} ({selectedDate}) - {category}
+                  {!isCurrentDate && (
+                    <span className="ml-2 text-sm font-normal text-gray-500">(View Only)</span>
+                  )}
                 </h3>
               </div>
 
@@ -346,8 +434,13 @@ Vitamin B Complex,8,Outreach program`;
                         Current Stock
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Actions
+                        Notes
                       </th>
+                      {isCurrentDate && viewMode === 'today' && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -368,20 +461,25 @@ Vitamin B Complex,8,Outreach program`;
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {record.current_stock}
                         </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => handleDeleteRecord(record.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                            title="Delete record and restore stock"
-                          >
-                            <FiTrash2 className="h-4 w-4" />
-                          </button>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                          {record.notes || '-'}
                         </td>
+                        {isCurrentDate && viewMode === 'today' && (
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => handleDeleteRecord(record.id)}
+                              className="text-red-600 hover:text-red-800 p-1"
+                              title="Delete record and restore stock"
+                            >
+                              <FiTrash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                     {todayRecords.length === 0 && (
                       <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={isCurrentDate && viewMode === 'today' ? 6 : 5} className="px-6 py-8 text-center text-gray-500">
                           No dispensing records for {selectedDate} in {category} category
                         </td>
                       </tr>
@@ -394,8 +492,8 @@ Vitamin B Complex,8,Outreach program`;
         </div>
       </div>
 
-      {/* Import CSV Modal */}
-      {showImportModal && (
+      {/* Import CSV Modal - Only show when it's today and in entry mode */}
+      {showImportModal && isCurrentDate && viewMode === 'today' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -428,7 +526,8 @@ Vitamin B Complex,8,Outreach program`;
                   <li>Drug names must match exactly with your inventory</li>
                   <li>Quantity must be positive numbers</li>
                   <li>Stock will be automatically deducted</li>
-                  <li>Date and category will be set as per current selection</li>
+                  <li>Importing for date: {selectedDate}</li>
+                  <li>Category: {category}</li>
                 </ul>
               </div>
 
