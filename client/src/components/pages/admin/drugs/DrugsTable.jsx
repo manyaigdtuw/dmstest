@@ -85,7 +85,7 @@ const DrugsTable = () => {
       
       const timestamp = new Date().toISOString().split('T')[0];
       link.setAttribute('href', url);
-      link.setAttribute('download', `drugs_export_${timestamp}.csv`);
+      link.setAttribute('download', `drugs_export_.csv`);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
@@ -618,7 +618,7 @@ const DrugsTable = () => {
         );
       } else {
         toast.success(
-          `Successfully imported ${response.data.successCount} drugs`
+          `Successfully imported drugs`
         );
         fetchDrugs(); // Refresh the drug list
         setShowImportModal(false);
