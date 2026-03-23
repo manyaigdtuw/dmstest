@@ -832,7 +832,6 @@ const DrugsTable = () => {
                           onChange={handleAddChange}
                           className="w-full px-2 py-1 border border-gray-300 rounded-md"
                           min="0"
-                          step="0.01"
                           required
                         />
                       </td>

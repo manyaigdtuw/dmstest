@@ -1,37 +1,48 @@
 import React from 'react';
 import UserContextProvider from './context/UserContextProvider';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/pages/Dashboard';
 import UnauthorizedPage from './components/pages/UnauthorizedPage';
+
 import ProtectedRoute from './context/ProtectedRoute';
 import AuthRedirect from './context/AuthRedirect';
-import AdminPage from './components/pages/admin/AdminPage'
+
+import AdminPage from './components/pages/admin/AdminPage';
 import InstitutePage from './components/pages/institute/InstitutePage';
 import PharmacyPage from './components/pages/pharmacy/PharmacyPage';
+
 import { ToastContainer } from 'react-toastify';
-import Chatbot from './components/chatbot/Chatbot';
+// import Chatbot from './components/chatbot/Chatbot';
+
 const App = () => {
   return (
     <BrowserRouter>
       <UserContextProvider>
         <AuthRedirect />
+
         <Routes>
-          
-          <Route path="/" element={<Navigate to="/login" replace/>} />
+
+          {/* General Routes */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard/>}/>
-          <Route path="/unauthorized" element={<UnauthorizedPage/>}/>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          {/* protected routes  */}
-          {/* admin  */}
-          <Route path='/admin' element={
-            <ProtectedRoute roles={['admin']}>
-              <AdminPage/>
-            </ProtectedRoute>
-          }>
+          {/* ---------------------------------------------------
+              ADMIN ROUTES (protected)
+          ---------------------------------------------------- */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminPage type="dashboard" />} />
             <Route path="institutes" element={<AdminPage type="institutes" />} />
@@ -41,13 +52,18 @@ const App = () => {
             <Route path="login-history" element={<AdminPage type="login-history" />} />
             <Route path="settings" element={<AdminPage type="settings" />} />
           </Route>
-          
-          {/* institute */}
-          <Route path='/institute' element={
-            <ProtectedRoute roles={['institute', 'admin']}>
-              <InstitutePage/>
-            </ProtectedRoute>
-          }>
+
+          {/* ---------------------------------------------------
+              INSTITUTE ROUTES (protected)
+          ---------------------------------------------------- */}
+          <Route
+            path="/institute"
+            element={
+              <ProtectedRoute roles={['institute', 'admin']}>
+                <InstitutePage />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<InstitutePage type="dashboard" />} />
             <Route path="dispensaries" element={<InstitutePage type="dispensaries" />} />
@@ -58,25 +74,29 @@ const App = () => {
             <Route path="settings" element={<InstitutePage type="settings" />} />
           </Route>
 
-          {/* pharmacy  */}
-          <Route path='/pharmacy' element={
-            <ProtectedRoute roles={['institute', 'admin', 'pharmacy']}>
-              <PharmacyPage/>
-            </ProtectedRoute>
-          }>
+          {/* ---------------------------------------------------
+              PHARMACY ROUTES (protected)
+          ---------------------------------------------------- */}
+          <Route
+            path="/pharmacy"
+            element={
+              <ProtectedRoute roles={['institute', 'admin', 'pharmacy']}>
+                <PharmacyPage />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<PharmacyPage type="dashboard" />} />
             <Route path="drugs" element={<PharmacyPage type="drugs" />} />
             <Route path="indent" element={<PharmacyPage type="indent" />} />
             <Route path="indent-history" element={<PharmacyPage type="indent-history" />} />
             <Route path="settings" element={<PharmacyPage type="settings" />} />
+            <Route path="daily-dispensing" element={<PharmacyPage type="daily-dispensing" />} />
           </Route>
-          
-
-
 
         </Routes>
-        <Chatbot />
+
+        {/* <Chatbot /> */}
         <ToastContainer />
       </UserContextProvider>
     </BrowserRouter>

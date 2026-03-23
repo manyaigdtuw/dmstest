@@ -4,6 +4,7 @@ import api from '../../../../api/api';
 import UserContext from '../../../../context/UserContext';
 import AddInstitute from './AddInstitute';
 import EditInstitute from './EditInstitute';
+import LinkDispensary from './LinkDispensary';
 import {
   FiEdit,
   FiTrash2,
@@ -11,6 +12,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiSearch,
+  FiLink,
 } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 
@@ -20,7 +22,9 @@ const InstituteTable = () => {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [currentInstitute, setCurrentInstitute] = useState(null);
+  const [selectedInstitute, setSelectedInstitute] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pagination, setPagination] = useState({
     page: 1,
@@ -96,6 +100,11 @@ const InstituteTable = () => {
   const handleEditSuccess = () => {
     fetchInstitutes(pagination.page, pagination.limit, searchTerm);
     setIsEditModalOpen(false);
+  };
+
+  const handleLinkSuccess = () => {
+    fetchInstitutes(pagination.page, pagination.limit, searchTerm);
+    setIsLinkModalOpen(false);
   };
 
   return (
@@ -239,6 +248,18 @@ const InstituteTable = () => {
                             {user?.role === 'admin' && (
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div className="flex justify-end space-x-3">
+                                  {institute.role === 'institute' && (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedInstitute(institute);
+                                        setIsLinkModalOpen(true);
+                                      }}
+                                      className="text-green-600 hover:text-green-900 transition-colors"
+                                      title="Link Dispensary"
+                                    >
+                                      <FiLink className="h-5 w-5" />
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => {
                                       setCurrentInstitute(institute);
@@ -413,6 +434,15 @@ const InstituteTable = () => {
               onClose={() => setIsEditModalOpen(false)}
               onSave={handleEditSuccess}
               institute={currentInstitute}
+            />
+          )}
+
+          {selectedInstitute && (
+            <LinkDispensary
+              isOpen={isLinkModalOpen}
+              onClose={() => setIsLinkModalOpen(false)}
+              onSave={handleLinkSuccess}
+              institute={selectedInstitute}
             />
           )}
         </div>

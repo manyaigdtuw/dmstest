@@ -8,36 +8,45 @@ const path = require('path');
 const { logRequest, logResponse, errorLogger } = require('./middlewares/loggingMiddleware');
 const morgan = require('morgan');
 
-
-
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const drugRoutes = require('./routes/drugRoutes');
 const instituteOrderRoutes = require('./routes/instituteOrderRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-const sellerRoutes = require('./routes/sellerRoutes')
+const sellerRoutes = require('./routes/sellerRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const pharmacyOrderRoutes = require('./routes/pharmacyOrderRoutes');
 const adminOrderRoutes = require('./routes/adminOrderRoutes');
 const resetProfileRoutes = require('./routes/resetProfileRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
 const drugTypeNameRoutes = require('./routes/drugTypeNameRouters');
+const dailyDispensingRoutes = require('./routes/dailyDispensingRoutes');
 
-const PORT = process.env.PORT;
+
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0'; 
 
 // HTTP request logging (complementary to our custom logging)
 app.use(morgan('dev', {
   skip: (req) => req.path === '/healthcheck' // Skip health checks
 }));
 
-
 // Middleware
-app.set('trust proxy', 1); // Trust first proxy
+app.set('trust proxy', true); // Trust first proxy
 app.use(express.json());
-app.use(cors());
 
-//logging middleware
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'http://localhost:8005',
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+
+// Logging middleware
 app.use(logRequest);
 app.use(logResponse);
 
@@ -52,9 +61,11 @@ app.use("/api/users", usersRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use('/api/pharmacy', pharmacyOrderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
-app.use("/api/reset", resetProfileRoutes)
+app.use("/api/reset", resetProfileRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use('/api/drug-types-names', drugTypeNameRoutes);
+app.use('/api/daily-dispensing', dailyDispensingRoutes);
+
 
 // Error handling middleware (must be after all other middleware and routes)
 app.use(errorLogger);
@@ -71,30 +82,28 @@ const connectDb = new Client({
 // Start server after DB connection
 const startServer = async () => {
     try {
-        await connectDb.connect().then(()=>console.log("PostgreSQL connected"));
+        await connectDb.connect().then(() => console.log("PostgreSQL connected"));
 
-        // Making the client accessible in routes via app locals
+        // Make the client accessible in routes via app locals
         app.locals.db = connectDb;
 
-        // Ensure the uploads directory exists
+        // Ensure uploads directory exists
         const uploadsDir = path.join(__dirname, 'uploads');
-        if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir);
-        }
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 
         // Ensure logs directory exists
         const logsDir = path.join(__dirname, 'logs');
-        if (!fs.existsSync(logsDir)) {
-            fs.mkdirSync(logsDir);
-        }
+        if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
 
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+        app.listen(PORT, HOST, () => {
+            console.log(`Server is running at http://${HOST}:${PORT}`);
         });
     } catch (error) {
         console.error("Failed to connect to PostgreSQL:", error.message);
         process.exit(1);
     }
 };
+
+
 
 startServer();

@@ -11,12 +11,13 @@ import {
   FiCheck,
   FiXCircle,
   FiDownload,
+  FiUpload,
+  FiClock,
 } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { FiUpload } from 'react-icons/fi';
 
 const DrugsTable = () => {
   const [drugs, setDrugs] = useState([]);
@@ -33,6 +34,71 @@ const DrugsTable = () => {
     addedBy: '',
     expDateRange: [null, null],
   });
+  const [sortBy, setSortBy] = useState('updated_at'); // Default sort by last updated
+  
+  const exportToCSV = () => {
+    try {
+      // Prepare CSV headers
+      const headers = [
+        'Drug Type',
+        'Name',
+        'Batch No',
+        'Description',
+        'Stock',
+        'Manufacturing Date',
+        'Expiration Date',
+        'Price',
+        'Category',
+        'Added By',
+        'Last Updated',
+        'Created Date'
+      ];
+
+      // Prepare CSV data
+      const csvData = drugs.map(drug => [
+        drug.drug_type || '',
+        drug.name || '',
+        drug.batch_no || '',
+        drug.description || '',
+        drug.stock || 0,
+        drug.mfg_date ? new Date(drug.mfg_date).toLocaleDateString('en-IN') : '',
+        drug.exp_date ? new Date(drug.exp_date).toLocaleDateString('en-IN') : '',
+        drug.price || 0,
+        drug.category || '',
+        drug.creator_name || '',
+        drug.updated_at ? new Date(drug.updated_at).toLocaleString('en-IN') : '',
+        drug.created_at ? new Date(drug.created_at).toLocaleDateString('en-IN') : ''
+      ]);
+
+      // Combine headers and data
+      const csvContent = [
+        headers,
+        ...csvData
+      ].map(row => 
+        row.map(field => `"${field}"`).join(',')
+      ).join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().split('T')[0];
+      link.setAttribute('href', url);
+      link.setAttribute('download', `drugs_export_.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Exported ${drugs.length} drugs successfully!`);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast.error('Failed to export drugs data');
+    }
+  };
+
   const [editingId, setEditingId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [newDrug, setNewDrug] = useState({
@@ -55,6 +121,25 @@ const DrugsTable = () => {
     totalPages: 1,
   });
 
+  const formatDate = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN');
+  };
+
+  const formatDateTime = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   // State for drug types and names from database
   const [drugTypes, setDrugTypes] = useState([]);
   const [availableDrugNames, setAvailableDrugNames] = useState([]);
@@ -62,6 +147,88 @@ const DrugsTable = () => {
   const [importFile, setImportFile] = useState(null);
   const [importProgress, setImportProgress] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
+
+  // Sample CSV download function
+  const downloadSampleCSV = () => {
+    // Sample CSV data with headers and example rows
+    const csvData = [
+      [
+        'Drug Type',
+        'Name', 
+        'Batch No',
+        'Description',
+        'Stock',
+        'Manufacturing Date',
+        'Expiration Date',
+        'Price',
+        'Category'
+      ],
+      [
+        'Tablet',
+        'Paracetamol',
+        'BATCH001',
+        'Pain reliever and fever reducer',
+        '100',
+        '15-01-2024',
+        '15-01-2026',
+        '25.50',
+        'OPD'
+      ],
+      [
+        'Syrup',
+        'Cough Syrup',
+        'BATCH002',
+        'For cough and cold relief',
+        '50',
+        '20-02-2024',
+        '20-02-2025',
+        '120.00',
+        'IPD'
+      ],
+      [
+        'Capsule',
+        'Amoxicillin',
+        'BATCH003',
+        'Antibiotic medication',
+        '75',
+        '10-03-2024',
+        '10-03-2026',
+        '85.75',
+        'OUTREACH'
+      ],
+      [
+        'Injection',
+        'Vitamin B12',
+        'BATCH004',
+        'Vitamin supplement injection',
+        '30',
+        '05-04-2024',
+        '05-04-2025',
+        '45.25',
+        'IPD'
+      ]
+    ];
+
+    // Convert to CSV string
+    const csvString = csvData.map(row => 
+      row.map(field => `"${field}"`).join(',')
+    ).join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'drugs_import_sample.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.info('Sample CSV downloaded successfully!');
+  };
 
   // Fetch drug types from database
   const fetchDrugTypes = async () => {
@@ -119,7 +286,7 @@ const DrugsTable = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [drugs, searchTerm, filters]);
+  }, [drugs, searchTerm, filters, sortBy]);
 
   const isExpiringSoon = (expDate) => {
     if (!expDate) return false;
@@ -193,6 +360,26 @@ const DrugsTable = () => {
       });
     }
 
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'updated_at':
+          return new Date(b.updated_at) - new Date(a.updated_at); // newest first
+        case 'mfg_date':
+          return new Date(a.mfg_date) - new Date(b.mfg_date); // oldest first
+        case 'exp_date':
+          return new Date(a.exp_date) - new Date(b.exp_date); // oldest first
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'stock':
+          return a.stock - b.stock;
+        case 'price':
+          return a.price - b.price;
+        default:
+          return new Date(b.updated_at) - new Date(a.updated_at);
+      }
+    });
+
     // Update pagination
     const total = result.length;
     const totalPages = Math.ceil(total / pagination.limit);
@@ -245,6 +432,7 @@ const DrugsTable = () => {
       expDateRange: [null, null],
     });
     setSearchTerm('');
+    setSortBy('updated_at');
   };
 
   const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
@@ -316,13 +504,15 @@ const DrugsTable = () => {
 
   const handleSaveNewDrug = async () => {
     try {
-      if (new Date(newDrug.mfg_date) >= new Date(newDrug.exp_date)) {
+      // Only validate dates if both are provided
+      if (newDrug.mfg_date && newDrug.exp_date && new Date(newDrug.mfg_date) >= new Date(newDrug.exp_date)) {
         toast.error('Manufacturing date must be before expiration date');
         return;
       }
 
-      if (!newDrug.batch_no || !newDrug.drug_type || !newDrug.name) {
-        toast.error('Batch number, drug type and name are required');
+      // Only name is required
+      if (!newDrug.name) {
+        toast.error('Drug name is required');
         return;
       }
 
@@ -428,7 +618,7 @@ const DrugsTable = () => {
         );
       } else {
         toast.success(
-          `Successfully imported ${response.data.successCount} drugs`
+          `Successfully imported drugs`
         );
         fetchDrugs(); // Refresh the drug list
         setShowImportModal(false);
@@ -491,11 +681,26 @@ const DrugsTable = () => {
           </h2>
           <div className="flex gap-2">
             <button
+              onClick={downloadSampleCSV}
+              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+            >
+              <FiDownload className="mr-2" />
+              Sample CSV
+            </button>
+            <button
               onClick={handleImportClick}
               className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
             >
               <FiUpload className="mr-2" />
               Import CSV
+            </button>
+            <button
+              onClick={exportToCSV}
+              disabled={drugs.length === 0}
+              className="flex items-center justify-center px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiDownload className="mr-2" />
+              Export CSV
             </button>
             <button
               onClick={handleAddNew}
@@ -537,7 +742,8 @@ const DrugsTable = () => {
                 filters.drugType ||
                 filters.addedBy ||
                 filters.priceRange[0] ||
-                filters.priceRange[1]) && (
+                filters.priceRange[1] ||
+                sortBy !== 'updated_at') && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
@@ -683,6 +889,29 @@ const DrugsTable = () => {
                   </select>
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="sortBy"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Sort By
+                  </label>
+                  <select
+                    id="sortBy"
+                    name="sortBy"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full px-2 py-1 border border-gray-300 rounded-md"
+                  >
+                    <option value="updated_at">Last Updated (Newest)</option>
+                    <option value="mfg_date">Manufacturing Date (Oldest)</option>
+                    <option value="exp_date">Expiration Date (Oldest)</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="stock">Stock (Low to High)</option>
+                    <option value="price">Price (Low to High)</option>
+                  </select>
+                </div>
+
                 {/* Date Range Picker */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -766,6 +995,9 @@ const DrugsTable = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Added by
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Last Updated
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
@@ -898,6 +1130,12 @@ const DrugsTable = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         -
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <FiClock className="mr-1 text-gray-400" />
+                          Now
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
                           <button
@@ -923,6 +1161,7 @@ const DrugsTable = () => {
                     getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
                       const isEditing = editingId === drug.id;
+                      const isModified = drug.updated_at !== drug.created_at;
 
                       return (
                         <tr
@@ -1033,9 +1272,7 @@ const DrugsTable = () => {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-500">
-                              {new Date(drug.mfg_date).toLocaleDateString()}
-                            </span>
+                            <span className="text-sm text-gray-500">{formatDate(drug.mfg_date)}</span>
                           </td>
                           <td
                             className={`px-6 py-4 whitespace-nowrap ${
@@ -1044,9 +1281,7 @@ const DrugsTable = () => {
                                 : 'text-gray-500'
                             }`}
                           >
-                            <span className="text-sm">
-                              {new Date(drug.exp_date).toLocaleDateString()}
-                            </span>
+                            <span className="text-sm">{formatDate(drug.exp_date)}</span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {isEditing ? (
@@ -1127,6 +1362,21 @@ const DrugsTable = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <div className="flex items-center">
+                                <FiClock className="mr-1 text-gray-400 text-xs" />
+                                <span className="text-sm text-gray-900 font-medium">
+                                  {formatDateTime(drug.updated_at)}
+                                </span>
+                              </div>
+                              {isModified && (
+                                <span className="text-xs text-blue-600 mt-1">
+                                  (Modified)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex space-x-2">
                               {isEditing ? (
                                 <>
@@ -1171,7 +1421,7 @@ const DrugsTable = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan="11"
+                        colSpan="12"
                         className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No drugs found matching your criteria
@@ -1219,25 +1469,38 @@ const DrugsTable = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select CSV File
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Select CSV File
+                  </label>
+                  <button
+                    type="button"
+                    onClick={downloadSampleCSV}
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    <FiDownload className="mr-1 h-4 w-4" />
+                    Download Sample CSV
+                  </button>
+                </div>
                 <input
                   type="file"
                   accept=".csv"
                   onChange={handleFileChange}
                   className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
                 />
-                <p className="mt-1 text-sm text-gray-500">
-                  CSV should include columns: Drug Type, Name, Batch No,
-                  Description, Stock, Manufacturing Date (DD-MM-YYYY ), Expiration Date (DD-MM-YYYY),
-                  Price, Category
-                </p>
+                <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2">
+                    CSV Format Requirements:
+                  </h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Use the exact column names from the sample file</li>
+                  </ul>
+                </div>
               </div>
 
               {importProgress && (

@@ -1,15 +1,24 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { FiHome, FiSettings, FiLogOut, FiChevronLeft, FiLoader, FiPackage, FiMenu } from 'react-icons/fi';
-import { FaPills, FaMoneyBill, FaHistory } from 'react-icons/fa';
+import {
+  FiHome,
+  FiSettings,
+  FiLogOut,
+  FiChevronLeft,
+  FiLoader,
+  FiPackage,
+  FiMenu
+} from 'react-icons/fi';
+import { FaPills, FaMoneyBill, FaHistory, FaSyringe } from 'react-icons/fa';
 import { MdBorderColor } from 'react-icons/md';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import DrugsTable from './drugs/DrugsTable';
 import AdminSettings from './PharmacySettings';
 import PharmacyOrderPage from './orders/PharmacyOrderPage';
+import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
+import DailyDispensing from './DailyDispensing'; // ✅ Added import
 import UserContext from '../../../context/UserContext';
 import logo from '../../../assets/logo.jpeg';
 import ProfileModal from '../ProfileModal';
-import PharmacyOrderHistory from './orders/PharmacyOrderHistory';
 import api from '../../../api/api';
 import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
@@ -78,6 +87,7 @@ const PharmacyPage = () => {
       {isMobile && mobileSidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-20" onClick={closeMobileSidebar} />
       )}
+
       {/* Sidebar */}
       <div
         className={`bg-indigo-800 text-white transition-all duration-300 ease-in-out 
@@ -135,6 +145,12 @@ const PharmacyPage = () => {
               { id: 'indent', icon: <FiPackage />, label: 'Indents', to: 'indent' },
               { id: 'indent-history', icon: <FaHistory />, label: 'Indent History', to: 'indent-history' },
               { id: 'settings', icon: <FiSettings />, label: 'Settings', to: 'settings' },
+              {
+                id: 'daily-dispensing',
+                icon: <FaSyringe />,
+                label: 'Daily Dispensing',
+                to: 'daily-dispensing'
+              },
             ].map((item) => (
               <li key={item.id}>
                 <NavLink
@@ -150,9 +166,7 @@ const PharmacyPage = () => {
                   end
                 >
                   <span className="text-lg">{item.icon}</span>
-                  {!sidebarCollapsed && (
-                    <span className="ml-3">{item.label}</span>
-                  )}
+                  {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
                 </NavLink>
               </li>
             ))}
@@ -173,31 +187,31 @@ const PharmacyPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${!isMobile ? (sidebarCollapsed ? 'ml-20' : 'ml-64') : ''}`}>
+      <div
+        className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
+          !isMobile ? (sidebarCollapsed ? 'ml-20' : 'ml-64') : ''
+        }`}
+      >
         {/* Header */}
         <header className="bg-white shadow-sm px-4 md:px-6 py-4 flex justify-between items-center">
-                  {/* Mobile Menu Button */}
-                  {isMobile && (
-                    <button
-                      onClick={toggleSidebar}
-                      className="text-gray-500 hover:text-gray-700 p-1"
-                    >
-                      <FiMenu className="text-2xl" />
-                    </button>
-                  )}
-                  
-                  <div className="flex items-center space-x-4 ml-auto">
-                    
-                    <button
-                      onClick={handleProfileClick}
-                      className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
-                    >
-                      <span className="text-indigo-800 font-medium">
-                        {user?.name?.charAt(0)}
-                      </span>
-                    </button>
-                  </div>
-                </header>
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 p-1">
+              <FiMenu className="text-2xl" />
+            </button>
+          )}
+
+          <div className="flex items-center space-x-4 ml-auto">
+            <button
+              onClick={handleProfileClick}
+              className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center hover:bg-indigo-200 transition-colors"
+            >
+              <span className="text-indigo-800 font-medium">
+                {user?.name?.charAt(0)}
+              </span>
+            </button>
+          </div>
+        </header>
 
         {/* Content Area */}
         <main className="p-4 md:p-6">
@@ -209,6 +223,7 @@ const PharmacyPage = () => {
               <Route path="indent" element={<PharmacyOrderPage />} />
               <Route path="indent-history" element={<PharmacyOrderHistory />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="daily-dispensing" element={<DailyDispensing />} />
             </Routes>
           </div>
         </main>

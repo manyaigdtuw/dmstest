@@ -91,6 +91,93 @@ const createPharmacyUser = async (req, res) => {
   }
 };
 
+// Link dispensary to institute
+const linkDispensaryToInstitute = async (req, res) => {
+  const db = req.app.locals.db;
+  const { instituteId, dispensaryId } = req.body;
+
+  try {
+    // Check if institute exists and is actually an institute
+    const instituteCheck = await db.query(
+      'SELECT * FROM users WHERE id = $1 AND role = $2',
+      [instituteId, 'institute']
+    );
+
+    if (instituteCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: 'Institute not found',
+      });
+    }
+
+    // Check if dispensary exists and is actually a pharmacy
+    const dispensaryCheck = await db.query(
+      'SELECT * FROM users WHERE id = $1 AND role = $2',
+      [dispensaryId, 'pharmacy']
+    );
+
+    if (dispensaryCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: 'Dispensary not found',
+      });
+    }
+
+    // Check if dispensary is already linked
+    if (dispensaryCheck.rows[0].created_by) {
+      return res.status(409).json({
+        status: false,
+        message: 'Dispensary is already linked to an institute',
+      });
+    }
+
+    // Link the dispensary to the institute
+    const result = await db.query(
+      'UPDATE users SET created_by = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [instituteId, dispensaryId]
+    );
+
+    res.json({
+      status: true,
+      message: 'Dispensary linked to institute successfully',
+      dispensary: result.rows[0],
+    });
+  } catch (err) {
+    console.error('Link dispensary error:', err);
+    res.status(500).json({
+      status: false,
+      message: 'Server error while linking dispensary',
+      error: err.message,
+    });
+  }
+};
+
+// Get unlinked dispensaries
+const getUnlinkedDispensaries = async (req, res) => {
+  const db = req.app.locals.db;
+
+  try {
+    const result = await db.query(
+      `SELECT id, name, email, license_number, status, created_at
+       FROM users 
+       WHERE role = 'pharmacy' AND created_by IS NULL
+       ORDER BY created_at DESC`
+    );
+
+    res.json({
+      status: true,
+      dispensaries: result.rows,
+    });
+  } catch (err) {
+    console.error('Get unlinked dispensaries error:', err);
+    res.status(500).json({
+      status: false,
+      message: 'Server error while fetching unlinked dispensaries',
+      error: err.message,
+    });
+  }
+};
+
 // Get all pharmacy users created by the institute
 const getPharmacyUsers = async (req, res) => {
   const db = req.app.locals.db;
@@ -370,4 +457,6 @@ module.exports = {
   getPharmacyUserById,
   updatePharmacyUser,
   deletePharmacyUser,
+  linkDispensaryToInstitute,
+  getUnlinkedDispensaries
 };

@@ -11,6 +11,7 @@ import {
   FiCheck,
   FiXCircle,
   FiUpload,
+  FiClock,
 } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
@@ -60,6 +61,26 @@ const DrugsTable = () => {
   const [importFile, setImportFile] = useState(null);
   const [importProgress, setImportProgress] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
+
+  // Date formatting functions
+  const formatDate = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('en-IN');
+  };
+
+  const formatDateTime = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   // Fetch drug types from database
   const fetchDrugTypes = async () => {
@@ -725,6 +746,9 @@ const DrugsTable = () => {
                       Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Last Updated
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -852,6 +876,12 @@ const DrugsTable = () => {
                           <option value="OUTREACH">OUTREACH</option>
                         </select>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <FiClock className="mr-1 text-gray-400" />
+                          Now
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
                           <button
@@ -877,6 +907,8 @@ const DrugsTable = () => {
                     getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
                       const isEditing = editingId === drug.id;
+                      const isModified = drug.updated_at && drug.created_at && 
+                        new Date(drug.updated_at).getTime() !== new Date(drug.created_at).getTime();
 
                       return (
                         <tr
@@ -988,7 +1020,7 @@ const DrugsTable = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-gray-500">
-                              {new Date(drug.mfg_date).toLocaleDateString()}
+                              {formatDate(drug.mfg_date)}
                             </span>
                           </td>
                           <td
@@ -999,7 +1031,7 @@ const DrugsTable = () => {
                             }`}
                           >
                             <span className="text-sm">
-                              {new Date(drug.exp_date).toLocaleDateString()}
+                              {formatDate(drug.exp_date)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1076,6 +1108,21 @@ const DrugsTable = () => {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <div className="flex items-center">
+                                <FiClock className="mr-1 text-gray-400 text-xs" />
+                                <span className="text-sm text-gray-900 font-medium">
+                                  {formatDateTime(drug.updated_at)}
+                                </span>
+                              </div>
+                              {isModified && (
+                                <span className="text-xs text-blue-600 mt-1">
+                                  (Modified)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex space-x-2">
                               {isEditing ? (
                                 <>
@@ -1120,7 +1167,7 @@ const DrugsTable = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan="10"
+                        colSpan="11"
                         className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No drugs found matching your criteria

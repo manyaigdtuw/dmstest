@@ -13,34 +13,34 @@ const addDrug = async (req, res) => {
     } = req.body;
     const created_by = req.user.id;
 
-    // Validate required fields
-    if (!drug_type || !name || !mfg_date || !exp_date || !price || !batch_no) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate only name is required
+    if (!name) {
+      return res.status(400).json({ error: 'Drug name is required' });
     }
 
-    // Validate manufacturing date is before expiration date
-    if (new Date(mfg_date) >= new Date(exp_date)) {
+    // Validate manufacturing date is before expiration date (only if both are provided)
+    if (mfg_date && exp_date && new Date(mfg_date) >= new Date(exp_date)) {
       return res
         .status(400)
         .json({ error: 'Manufacturing date must be before expiration date' });
     }
 
     const query = `
-            INSERT INTO drugs (drug_type, name, description, stock, mfg_date, exp_date, price, created_by, batch_no, category)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO drugs (drug_type, name, description, stock, mfg_date, exp_date, price, created_by, batch_no, category, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
             RETURNING *`;
 
     const values = [
-      drug_type,
-      name,
-      description,
-      stock || 0,
-      mfg_date,
-      exp_date,
-      price,
+      drug_type || null,           // Optional
+      name,                        // Required
+      description || null,         // Optional
+      stock || 0,                  // Default to 0
+      mfg_date || null,            // Optional
+      exp_date || null,            // Optional
+      price || 0,                  // Default to 0
       created_by,
-      batch_no,
-      category,
+      batch_no || null,            // Optional
+      category || null,            // Optional
     ];
 
     const result = await req.app.locals.db.query(query, values);
@@ -65,24 +65,24 @@ const getDrugs = async (req, res) => {
         FROM drugs d
         JOIN users u ON d.created_by = u.id
         WHERE d.created_by = $1 
-        ORDER BY d.mfg_date ASC, d.name`;
+        ORDER BY d.updated_at DESC, d.mfg_date ASC, d.name`;
       values = [created_by];
     } else if (req.user.role === 'institute' || req.user.role === 'pharmacy') {
-      // Get drugs for the current user - sorted by mfg_date (oldest first)
+      // Get drugs for the current user - sorted by last updated (newest first)
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
         JOIN users u ON d.created_by = u.id
         WHERE d.created_by = $1 
-        ORDER BY d.mfg_date ASC, d.name`;
+        ORDER BY d.updated_at DESC, d.mfg_date ASC, d.name`;
       values = [req.user.id];
     } else {
-      // Admin can see all drugs with creator names - sorted by mfg_date (oldest first)
+      // Admin can see all drugs with creator names - sorted by last updated (newest first)
       query = `
         SELECT d.*, u.name as creator_name 
         FROM drugs d
         JOIN users u ON d.created_by = u.id
-        ORDER BY d.mfg_date ASC, d.name`;
+        ORDER BY d.updated_at DESC, d.mfg_date ASC, d.name`;
       values = [];
     }
 
@@ -137,15 +137,14 @@ const updateDrug = async (req, res) => {
     const { drug_type, name, description, stock, price, batch_no, category } =
       req.body;
 
-    // Validate required fields (removed date validation since we're not updating them)
-    if (!drug_type || !name || !price || !batch_no) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate only name is required
+    if (!name) {
+      return res.status(400).json({ error: 'Drug name is required' });
     }
 
     let query, values;
 
     if (req.user.role === 'institute' || req.user.role === 'pharmacy') {
-      // Institute and Pharmacy can only update drugs they created
       query = `
         UPDATE drugs 
         SET drug_type = $1,
@@ -159,13 +158,13 @@ const updateDrug = async (req, res) => {
         WHERE id = $8 AND created_by = $9
         RETURNING *`;
       values = [
-        drug_type,
+        drug_type || null,
         name,
-        description,
+        description || null,
         stock || 0,
-        price,
-        batch_no,
-        category,
+        price || 0,
+        batch_no || null,
+        category || null,
         id,
         req.user.id,
       ];
@@ -184,13 +183,13 @@ const updateDrug = async (req, res) => {
         WHERE id = $8
         RETURNING *`;
       values = [
-        drug_type,
+        drug_type || null,
         name,
-        description,
+        description || null,
         stock || 0,
-        price,
-        batch_no,
-        category,
+        price || 0,
+        batch_no || null,
+        category || null,
         id,
       ];
     }
@@ -269,7 +268,7 @@ const getExpiringDrugs = async (req, res) => {
 
     let queryText = `
       SELECT id, drug_type, name, description, stock, price, 
-             mfg_date, exp_date, batch_no,
+             mfg_date, exp_date, batch_no, updated_at,
              (exp_date - CURRENT_DATE) AS days_until_expiry
       FROM drugs
       WHERE exp_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + ($1 || ' days')::interval)

@@ -74,26 +74,61 @@ const PharmacyOrderPage = () => {
     }
   };
 
-  const fetchInstituteDrugs = async (instituteId) => {
-    try {
-      setLoading((prev) => ({ ...prev, drugs: true }));
-      const response = await api.get(`/drugs?created_by=${instituteId}`);
+ const fetchInstituteDrugs = async (instituteId) => {
+  try {
+    setLoading((prev) => ({ ...prev, drugs: true }));
+    const response = await api.get(`/drugs?created_by=${instituteId}`);
 
-      if (response.data.status && response.data.drugs) {
-        setDrugs(response.data.drugs.filter((drug) => drug.stock > 0));
-      } else if (Array.isArray(response.data)) {
-        setDrugs(response.data.filter((drug) => drug.stock > 0));
-      } else {
-        toast.info('No available drugs found at this institute');
-        setDrugs([]);
-      }
-    } catch (error) {
-      console.error('Fetch error:', error);
-      toast.error(`Failed to load drugs: ${error.message}`);
-    } finally {
-      setLoading((prev) => ({ ...prev, drugs: false }));
+    // Handle 304 Not Modified (cached response)
+    if (response.status === 304) {
+      console.log('Drugs data unchanged (cached)');
+      // If you have cached data, you might want to use it here
+      return;
     }
-  };
+
+    // Log the actual response structure for debugging
+    console.log('Drugs API response:', response);
+    console.log('Response data:', response.data);
+
+    let drugsData = [];
+
+    // Check different possible response structures
+    if (response.data && response.data.status && response.data.drugs) {
+      // Structure 1: { status: true, drugs: [...] }
+      drugsData = response.data.drugs;
+    } else if (response.data && Array.isArray(response.data)) {
+      // Structure 2: Direct array response
+      drugsData = response.data;
+    } else if (response.data && response.data.data) {
+      // Structure 3: { data: [...] }
+      drugsData = response.data.data;
+    } else {
+      console.warn('Unexpected response structure:', response.data);
+      toast.info('No drugs data found');
+      setDrugs([]);
+      return;
+    }
+
+    // Filter drugs with stock > 0
+    const availableDrugs = drugsData.filter((drug) => 
+      drug.stock > 0 && drug.stock != null
+    );
+
+    console.log(`Found ${availableDrugs.length} available drugs`);
+    setDrugs(availableDrugs);
+
+    if (availableDrugs.length === 0) {
+      toast.info('No available drugs found at this institute');
+    }
+
+  } catch (error) {
+    console.error('Fetch drugs error:', error);
+    console.error('Error details:', error.response?.data);
+    toast.error(`Failed to load drugs: ${error.message}`);
+  } finally {
+    setLoading((prev) => ({ ...prev, drugs: false }));
+  }
+};
 
   const updateCartItemCategory = (index, category) => {
     setCart((prevCart) =>

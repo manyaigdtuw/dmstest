@@ -115,3 +115,22 @@ CREATE TABLE login_logs (
 
 CREATE INDEX idx_login_logs_email ON login_logs(email);
 CREATE INDEX idx_login_logs_time ON login_logs(attempt_time);
+
+CREATE TABLE daily_dispensing_summary (
+    id SERIAL PRIMARY KEY,
+    drug_id INTEGER REFERENCES drugs(id) ON DELETE CASCADE,
+    quantity_dispensed INTEGER NOT NULL,
+    dispensing_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    category VARCHAR(50) CHECK (category IN ('IPD', 'OPD', 'OUTREACH')),
+    notes TEXT,
+    recorded_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Ensure only one record per drug per day per category
+    UNIQUE(drug_id, dispensing_date, category)
+);
+
+
+CREATE INDEX idx_dispensing_summary_date ON daily_dispensing_summary(dispensing_date);
+CREATE INDEX idx_dispensing_summary_drug_date ON daily_dispensing_summary(drug_id, dispensing_date);

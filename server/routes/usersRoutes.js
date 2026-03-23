@@ -8,6 +8,11 @@ const authorizeRole = require('../middlewares/roleMiddleware');
 // Admin/Institute User Management Routes
 // --------------------------------------------------
 
+console.log('🚀 ========== USERS ROUTES FILE LOADED ==========');
+console.log('📁 File path:', __filename);
+console.log('⏰ Load time:', new Date().toISOString());
+
+
 // Create a new institute (Admin only)
 router.post(
   '/',
@@ -89,6 +94,33 @@ router.delete(
   verifyToken,
   authorizeRole('institute'),
   pharmacyController.deletePharmacyUser
+);
+
+// Admin Dispensary Linking Routes
+// --------------------------------------------------
+
+// Link dispensary to institute (Admin only)
+router.post(
+  '/link-dispensary',
+  verifyToken,
+  authorizeRole('admin'),
+  pharmacyController.linkDispensaryToInstitute
+);
+
+// Get unlinked dispensaries (Admin only)
+
+router.get(
+  '/admin/unlinked-pharmacies',
+  verifyToken,
+  authorizeRole('admin'),
+  pharmacyController.getUnlinkedDispensaries
+);
+
+router.get(
+  '/admin/unlinkedpharmacies',
+  verifyToken,
+  authorizeRole('admin'),
+  pharmacyController.getUnlinkedDispensaries
 );
 
 module.exports = router;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit, FiUpload, FiX } from 'react-icons/fi';
 import api from '../../../../api/api';
 
 const DrugManagement = () => {
@@ -10,6 +10,12 @@ const DrugManagement = () => {
   const [newDrugName, setNewDrugName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+    const [showImportModal, setShowImportModal] = useState(false); // Add this state
+  const [importFile, setImportFile] = useState(null); // Add this state
+  const [importProgress, setImportProgress] = useState(null); // Add this state
+  const [importErrors, setImportErrors] = useState([]); // Add this state
+
+
 
   // Fetch all drug types
   useEffect(() => {
@@ -143,13 +149,87 @@ const DrugManagement = () => {
       setLoading(false);
     }
   };
+  // Add these new functions for import
+  const handleImportClick = () => {
+    setShowImportModal(true);
+    setImportFile(null);
+    setImportProgress(null);
+    setImportErrors([]);
+  };
+
+  const handleFileChange = (e) => {
+    setImportFile(e.target.files[0]);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      setError('Please select a file to upload');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    try {
+      setImportProgress({ status: 'Uploading...', percent: 0 });
+      setError('');
+
+      const response = await api.post('/drug-types-names/import-drug-types', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setImportProgress({
+            status: 'Uploading...',
+            percent: percentCompleted,
+          });
+        },
+      });
+
+      setImportProgress({
+        status: 'Processing...',
+        percent: 100,
+      });
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        setImportErrors(response.data.errors);
+        setError(`Import completed with ${response.data.successCount} successes and ${response.data.errors.length} errors`);
+      } else {
+        setError('');
+        alert(`Successfully imported ${response.data.successCount} drug types`);
+        fetchDrugTypes(); // Refresh the drug types list
+        setShowImportModal(false);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to import drug types');
+      console.error(err);
+    } finally {
+      setImportProgress(null);
+    }
+  };
 
   return (
     <div className="p-4 md:p-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-6">Drug Types & Names Management</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl md:text-2xl font-bold">Drug Types & Names Management</h2>
+        <button
+          onClick={handleImportClick}
+          className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+        >
+          <FiUpload className="mr-2" />
+          Import CSV
+        </button>
+      </div>
       
       {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+        <div className={`p-4 mb-4 rounded-md ${
+          error.includes('successfully') 
+            ? 'bg-green-100 border-l-4 border-green-500 text-green-700'
+            : 'bg-red-100 border-l-4 border-red-500 text-red-700'
+        }`}>
           <p>{error}</p>
         </div>
       )}
@@ -249,6 +329,98 @@ const DrugManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Import Drug Types from CSV</h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select CSV File
+              </label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                CSV should have one column with header "Drug_types" followed by drug type names
+              </p>
+            </div>
+
+            {importProgress && (
+              <div className="mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700">
+                    {importProgress.status}
+                  </span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {importProgress.percent}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${importProgress.percent}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            {importErrors.length > 0 && (
+              <div className="mb-4 max-h-40 overflow-y-auto">
+                <h4 className="text-sm font-medium text-red-700 mb-2">
+                  Errors ({importErrors.length})
+                </h4>
+                <div className="space-y-2">
+                  {importErrors.map((error, index) => (
+                    <div
+                      key={index}
+                      className="text-sm text-red-600 p-2 bg-red-50 rounded"
+                    >
+                      <p>
+                        <strong>{error.row}:</strong> {error.error}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImportSubmit}
+                disabled={!importFile || importProgress}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

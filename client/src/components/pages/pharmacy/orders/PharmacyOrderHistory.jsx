@@ -104,7 +104,8 @@ const PharmacyOrderHistory = () => {
       doc.text(`Date: ${formatDate(order.created_at)}`, 20, 38);
       doc.text(`Institute: ${order.recipient_name || 'N/A'}`, 20, 46);
 
-      const totalText = `Total Amount: ₹${parseFloat(
+     
+      const totalText = `Total Amount: Rs. ${parseFloat(
         order.total_amount
       ).toFixed(2)}`;
       doc.text(totalText, 20, 54);
@@ -333,7 +334,7 @@ const PharmacyOrderHistory = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium">
-                      Total: ₹{parseFloat(order.total_amount).toFixed(2)}
+                     Total: Rs. {parseFloat(order.total_amount).toFixed(2)}
                     </p>
                   </div>
                 </div>

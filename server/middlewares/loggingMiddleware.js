@@ -1,5 +1,20 @@
 const { v4: uuidv4 } = require('uuid');
-const chalk = require('chalk').default; // Fixed chalk import
+let chalk;
+
+// Safe chalk import
+try {
+  chalk = require('chalk');
+} catch (e) {
+  chalk = {
+    blue: (t) => t,
+    green: (t) => t,
+    red: (t) => t,
+    yellow: (t) => t,
+    cyan: { bold: (t) => t },
+    gray: (t) => t
+  };
+}
+
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +24,7 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
 
-// Enhanced logger with proper chalk initialization
+// Safe logger (chalk NEVER crashes)
 const logger = {
   info: (message, meta = {}) => {
     console.log(chalk.blue(`[INFO] ${message}`), meta);
@@ -18,12 +33,17 @@ const logger = {
     console.log(chalk.green(`[SUCCESS] ${message}`), meta);
   },
   error: (message, meta = {}) => {
-    console.error(chalk.red.bold(`[ERROR] ${message}`), meta);
+    // Guard: if chalk.red is undefined, fallback
+    const prefix = chalk?.red?.bold
+      ? chalk.red.bold(`[ERROR] ${message}`)
+      : `[ERROR] ${message}`;
+
+    console.error(prefix, meta);
   },
   request: (req) => {
     console.log(
       chalk.yellow(`[${new Date().toISOString()}]`),
-      chalk.cyan.bold(req.method),
+      chalk?.cyan?.bold ? chalk.cyan.bold(req.method) : req.method,
       req.path,
       chalk.gray(`from ${getIp(req)}`)
     );
@@ -32,7 +52,9 @@ const logger = {
     const statusColor = res.statusCode >= 400 ? chalk.red : chalk.green;
     console.log(
       chalk.yellow(`[${new Date().toISOString()}]`),
-      statusColor.bold(`Status: ${res.statusCode}`),
+      statusColor?.bold
+        ? statusColor.bold(`Status: ${res.statusCode}`)
+        : `Status: ${res.statusCode}`,
       chalk.gray(`in ${duration}ms`)
     );
   }
@@ -47,12 +69,13 @@ const getIp = (req) => {
 
 const redactSensitiveFields = (obj) => {
   if (!obj) return obj;
-  const sensitiveFields = ['password', 'token', 'jwtToken', 'authorization'];
+  const sensitive = ['password', 'token', 'jwtToken', 'authorization'];
+
   const clone = JSON.parse(JSON.stringify(obj));
-  
-  sensitiveFields.forEach(field => {
-    if (clone[field]) clone[field] = '***REDACTED***';
+  sensitive.forEach((f) => {
+    if (clone[f]) clone[f] = '***REDACTED***';
   });
+
   return clone;
 };
 
@@ -62,7 +85,7 @@ const logRequest = (req, res, next) => {
   req._startTime = process.hrtime();
 
   logger.request(req);
-  
+
   const logEntry = {
     requestId,
     timestamp: new Date().toISOString(),
@@ -95,18 +118,28 @@ const logResponse = (req, res, next) => {
 
   res.end = function (chunk) {
     if (chunk) chunks.push(chunk);
-    
-    const durationMs = (process.hrtime(req._startTime)[0] * 1e3 + 
-                       process.hrtime(req._startTime)[1] / 1e6).toFixed(2);
+
+    const durationMs = (
+      req._startTime
+        ? process.hrtime(req._startTime)[0] * 1e3 +
+          process.hrtime(req._startTime)[1] / 1e6
+        : 0
+    ).toFixed(2);
 
     logger.response(req, res, durationMs);
+
+    const bufferChunks = chunks.map((c) =>
+      Buffer.isBuffer(c) ? c : Buffer.from(c)
+    );
 
     const responseLog = {
       requestId: req._requestId,
       timestamp: new Date().toISOString(),
       status: res.statusCode,
       duration: `${durationMs}ms`,
-      body: chunks.length ? Buffer.concat(chunks).toString('utf8') : null
+      body: bufferChunks.length
+        ? Buffer.concat(bufferChunks).toString('utf8')
+        : null
     };
 
     fs.appendFileSync(
@@ -121,27 +154,33 @@ const logResponse = (req, res, next) => {
 };
 
 const errorLogger = (err, req, res, next) => {
+  const requestId = req?._requestId || 'unknown';
+
   const errorLog = {
     timestamp: new Date().toISOString(),
-    requestId: req._requestId,
-    path: req.path,
-    method: req.method,
-    user: req.user?.id,
+    requestId,
+    path: req?.path || 'unknown',
+    method: req?.method || 'unknown',
+    user: req?.user?.id || 'anonymous',
     error: {
-      message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      message: err?.message || 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
     }
   };
 
-  logger.error(`Error in ${req.method} ${req.path}`, {
-    message: err.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-
-  fs.appendFileSync(
-    path.join(logsDir, 'errors.log'),
-    JSON.stringify(errorLog) + '\n'
+  logger.error(
+    `Error in ${req?.method || 'UNKNOWN'} ${req?.path || 'UNKNOWN'}`,
+    { message: err?.message }
   );
+
+  try {
+    fs.appendFileSync(
+      path.join(logsDir, 'errors.log'),
+      JSON.stringify(errorLog) + '\n'
+    );
+  } catch (fsErr) {
+    console.error('Failed to write error log', fsErr);
+  }
 
   next(err);
 };

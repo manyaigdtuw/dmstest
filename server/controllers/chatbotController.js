@@ -4,73 +4,92 @@ const { Pool } = require('pg');
 // Database configuration
 const pool = new Pool({
   user: process.env.DB_USER,
-  host: process.env.DB_HOST ,
-  database: process.env.DB_NAME ,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT 
+  port: process.env.DB_PORT
 });
 
-// System Prompts with response formatting instructions
-const SYSTEM_PROMPTS = {
-  admin: `You are an expert AI assistant for a Drug Management System with ADMIN privileges. 
-          Follow these guidelines for responses:
-          
-          1. ORGANIZE responses with clear Markdown formatting:
-             - Use ## for main sections
-             - Use ### for subsections
-             - Use bullet points for lists
-             
-          2. HIGHLIGHT important information:
-             - ⚠️ for warnings (low stock, expiring soon)
-             - ✅ for positive statuses
-             - ❌ for negative statuses
-             
-          3. FORMAT data clearly:
-             - Dates: YYYY-MM-DD
-             - Prices: ₹XXX.XX
-             - IDs/Batches: in monospace
-             
-          4. PRIORITIZE data from the provided context.
-          5. For drug queries, always include: name, ID, batch, stock, expiry, price.
-          6. For orders, include: order number, status, date, items, total amount.
-          7. If unsure, ask clarifying questions.`,
-
-  institute: `You are a pharmaceutical institute management assistant. Format responses with:
-              
-              1. Clear hierarchy with headers
-              2. Consistent structure for similar items
-              3. Highlighted expiration dates
-              4. Visual status indicators
-              5. Organized by category when relevant
-              
-              Always include:
-              - Drug details: name, batch, stock, expiry, category
-              - Order details: number, date, status, items
-              - Inventory status with visual indicators`,
-
-  pharmacy: `You are a pharmacy operations specialist. Structure responses with:
-             
-             1. Clear section separation
-             2. Highlighted low stock items
-             3. Order tracking with status indicators
-             4. Inventory grouped by category
-             5. Batch number visibility
-             
-             Priority information:
-             - Stock levels with warnings
-             - Pending orders
-             - Nearest expirations
-             - Order status updates`
-};
-
 // Database schema information
-const DB_SCHEMA_INFO = `
+const schema = `
 Tables and columns:
-users(id, name, email, password, phone, street, city, state, postal_code, country, status, registration_date, license_number, role, created_by, created_at, updated_at)
-drugs(id, name, batch_no, description, stock, mfg_date, exp_date, price, created_by, category, created_at, updated_at)
-orders(id, order_no, user_id, recipient_id, transaction_type, notes, total_amount, created_at, updated_at)
-order_items(id, order_id, drug_id, custom_name, manufacturer_name, quantity, unit_price, total_price, source_type, batch_no, seller_id, status, created_at, updated_at)
+
+users(
+  id, name, email, password, phone, street, city, state, postal_code, country,
+  status, registration_date, license_number, role, created_by, created_at, updated_at
+)
+
+drugs(
+  id, drug_type, name, batch_no, description, stock, mfg_date, exp_date, price,
+  created_by, category, created_at, updated_at
+)
+
+orders(
+  id, order_no, user_id, recipient_id, transaction_type, notes, total_amount,
+  created_at, updated_at
+)
+
+order_items(
+  id, order_id, drug_id, custom_name, manufacturer_name, quantity, unit_price, total_price,
+  source_type, category, batch_no, seller_id, status, created_at, updated_at
+)
+
+drug_types(
+  id, type_name, created_at, updated_at
+)
+
+drug_names(
+  id, type_id, name, created_at, updated_at
+)
+
+rate_limiter(
+  key, points, expire
+)
+
+login_logs(
+  id, user_id, email, ip_address, user_agent, status, attempt_time, failure_reason
+)
 `;
+
+// Strict System Prompts
+const STRICT_SYSTEM_PROMPTS = {
+  admin: `You are a strict data assistant for a Drug Management System. CRITICAL RULES:
+  
+  **DATA CONSTRAINTS:**
+  - ONLY use data provided in the context below
+  - NEVER invent, assume, or hallucinate any values
+  - If data is missing, say "Data not available" for that field
+  - If no records match, say "No matching records found"
+  
+  **RESPONSE RULES:**
+  - Base ALL responses ONLY on the provided database results
+  - Use exact values from the data, do not estimate or approximate
+  - If context is empty or insufficient, respond: "I don't have enough data to answer that question accurately"
+  - For calculations, only use provided numbers
+  
+  **FORMATTING:**
+  - Use clear Markdown tables and sections
+  - Highlight critical info (low stock, expiring soon)
+  - Be concise and data-focused
+  
+  Current database schema available: ${schema}`,
+
+  institute: `You are a pharmaceutical institute assistant. STRICT RULES:
+  
+  - ONLY reference data provided in the context
+  - NEVER invent drug names, batch numbers, or quantities
+  - If data is incomplete, acknowledge the limitation
+  - Use exact values from query results
+  
+  Respond based SOLELY on the database results provided.`,
+  
+  pharmacy: `You are a pharmacy data assistant. IMPORTANT:
+  
+  - All responses must be grounded in the provided data context
+  - Do not make up stock levels, orders, or expiration dates
+  - If the data doesn't contain the answer, say so clearly
+  - Use only the exact values from database results`
+};
 
 // Helper function for status icons
 function getStatusIcon(status) {
@@ -87,61 +106,247 @@ function getStatusIcon(status) {
   return icons[status] || '▪️';
 }
 
-// Dynamic SQL query generator
-async function generateDynamicSQL(user, question) {
+// Fetch with timeout utility
+const fetchWithTimeout = async (url, options, timeout = 30000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
   try {
-    const sqlPrompt = `
-You are a PostgreSQL expert. Generate a SQL query to answer the user's question based on this schema:
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+};
 
-${DB_SCHEMA_INFO}
+// Enhanced SQL generator with strict validation
+async function generateValidatedSQL(userQuery, userRole) {
+  const forbiddenKeywords = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE'];
+  
+  // Provide exact column names to prevent AI from guessing
+  const exactSchema = `
+EXACT TABLE STRUCTURE:
+users(id, name, email, role, status)
+drugs(id, name, batch_no, stock, exp_date, price, category, created_by)
+orders(id, order_no, user_id, recipient_id, total_amount, created_at)
+order_items(id, order_id, drug_id, quantity, unit_price, status)
 
-User role: ${user.role}
-Question: "${question}"
+KEY RELATIONSHIPS:
+- drugs.created_by = users.id
+- orders.user_id = users.id  
+- orders.recipient_id = users.id
+- order_items.order_id = orders.id
+- order_items.drug_id = drugs.id
 
-Rules:
-1. Only return valid PostgreSQL SELECT query
-2. For date ranges, use INTERVAL (e.g., "NOW() + INTERVAL '3 months'")
-3. For pharmacy role, filter by recipient_id = ${user.id}
-4. For institute role, filter by created_by = ${user.id}
-5. Never use DELETE, UPDATE, or INSERT
-6. Include relevant joins
-7. Limit to 20 results
-8. Format as plain SQL without markdown
+NOTE: All primary keys are named 'id', not 'drug_id', 'order_id', etc.
+`;
 
-SQL Query:`;
+  const prompt = ` IMPORTANT: Do not inline user-provided string values. Either:
+1) produce parameterized SQL using $1, $2 placeholders and then return a list of params in a comment, OR
+2) if using inline literals, always wrap string literals in single quotes.
 
-    const response = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
+Generate a SAFE PostgreSQL SELECT query ONLY using EXACT column names from the schema.
+STRICT RULES:
+1. ONLY generate SELECT queries
+2. Use EXACT column names from the schema below - do not guess or invent column names
+3. NEVER include: ${forbiddenKeywords.join(', ')}
+4. Return ONLY the SQL, no explanations
+5. Always include LIMIT 20 for safety
+6. Use correct JOIN conditions based on the exact relationships provided
+
+EXACT SCHEMA: ${exactSchema}
+
+User Role: ${userRole}
+Question: ${userQuery}
+
+SQL:`;
+
+  try {
+    const response = await fetchWithTimeout(
+      `${process.env.OLLAMA_BASE_URL}/api/generate`,
       {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:8080'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free',
-          messages: [{ role: 'user', content: sqlPrompt }],
-          temperature: 0,
-          max_tokens: 500
+          model: process.env.OLLAMA_MODEL,
+          prompt: prompt,
+          stream: false,
+          options: { temperature: 0, num_predict: 500 }
         })
       }
     );
 
-    const result = await response.json();
-    let sqlQuery = result.choices?.[0]?.message?.content;
+    if (!response.ok) throw new Error('API error');
+    
+    let sql = (await response.json()).response.trim();
+    sql = sql.replace(/```sql|```/g, '').trim();
 
-    // Clean up the SQL query
-    sqlQuery = sqlQuery.replace(/```sql|```/g, '').trim();
-    if (!sqlQuery.toLowerCase().startsWith('select')) {
-      throw new Error('Generated query is not a SELECT statement');
+    // Enhanced security validation
+    if (forbiddenKeywords.some(keyword => sql.toUpperCase().includes(keyword))) {
+      throw new Error('Unsafe query detected');
+    }
+    
+    if (!sql.toUpperCase().startsWith('SELECT')) {
+      throw new Error('Not a SELECT query');
     }
 
-    return sqlQuery;
+    // Validate column names against actual schema
+    const invalidColumns = validateSQLColumns(sql);
+    if (invalidColumns.length > 0) {
+      console.log('Invalid columns detected:', invalidColumns);
+      throw new Error(`Invalid column names: ${invalidColumns.join(', ')}`);
+    }
+
+    return sql;
   } catch (error) {
-    console.error('SQL generation error:', error);
-    throw error;
+    console.error('SQL generation failed:', error.message);
+    return null;
   }
+}
+
+
+function validateSQLColumns(sql) {
+  // canonical list of valid columns (lowercased)
+  const validColumns = [
+    // users table
+    'users.id', 'users.name', 'users.email', 'users.password', 'users.phone', 'users.street',
+    'users.city', 'users.state', 'users.postal_code', 'users.country', 'users.status',
+    'users.registration_date', 'users.license_number', 'users.role', 'users.created_by',
+    'users.created_at', 'users.updated_at',
+
+    // drugs table
+    'drugs.id', 'drugs.drug_type', 'drugs.name', 'drugs.batch_no', 'drugs.description',
+    'drugs.stock', 'drugs.mfg_date', 'drugs.exp_date', 'drugs.price', 'drugs.created_by',
+    'drugs.category', 'drugs.created_at', 'drugs.updated_at',
+
+    // orders table
+    'orders.id', 'orders.order_no', 'orders.user_id', 'orders.recipient_id',
+    'orders.transaction_type', 'orders.notes', 'orders.total_amount', 'orders.created_at',
+    'orders.updated_at',
+
+    // order_items table
+    'order_items.id', 'order_items.order_id', 'order_items.drug_id', 'order_items.custom_name',
+    'order_items.manufacturer_name', 'order_items.quantity', 'order_items.unit_price',
+    'order_items.total_price', 'order_items.source_type', 'order_items.category',
+    'order_items.batch_no', 'order_items.seller_id', 'order_items.status',
+    'order_items.created_at', 'order_items.updated_at',
+
+    // drug_types table
+    'drug_types.id', 'drug_types.type_name', 'drug_types.created_at', 'drug_types.updated_at',
+
+    // drug_names table
+    'drug_names.id', 'drug_names.type_id', 'drug_names.name', 'drug_names.created_at',
+    'drug_names.updated_at'
+  ].map(c => c.toLowerCase());
+
+  // SQL keywords to ignore (lowercase)
+  const sqlKeywords = new Set([
+    'select','from','where','order','by','limit','join','left','right','inner','outer','on','and','or',
+    'group','having','as','count','sum','avg','min','max','distinct','case','when','then','else','end',
+    'between','in','is','not','null','like','ilike','exists','now','interval','true','false','offset',
+    'union','all','except','intersect','limit','offset'
+  ]);
+
+  // 1) remove string literals and dollar-quoted strings to avoid false positives
+  const sqlNoStrings = sql
+    .replace(/'(?:\\'|[^'])*'/g, ' ')      // single quoted
+    .replace(/"(?:\\"|[^"])*"/g, ' ')      // double quoted
+    .replace(/\$\$[\s\S]*?\$\$/g, ' ');    // dollar-quoted
+
+  const lowerSql = sqlNoStrings.toLowerCase();
+
+  // 2) find table aliases: supports "FROM table t" and "JOIN table t"
+  const aliasMap = {}; // alias -> tableName
+  const tableRegex = /\b(?:from|join)\s+([a-z0-9_."]+)(?:\s+(?:as\s+)?([a-z_][\w]*))?/ig;
+  let m;
+  while ((m = tableRegex.exec(lowerSql)) !== null) {
+    let tableToken = m[1].trim();
+    let alias = m[2] ? m[2].trim() : null;
+
+    // strip optional quotes around table token
+    tableToken = tableToken.replace(/^"+|"+$/g, '');
+    // if tableToken includes schema like public.drugs, keep full token
+    const tableName = tableToken.split('.').pop(); // use last part (drugs)
+    if (alias) aliasMap[alias] = tableName;
+    // also map the table name to itself so qualified 'drugs.col' checks work
+    aliasMap[tableName] = tableName;
+  }
+
+  // 3) validate qualified columns like "d.stock" or "drugs.stock"
+  const qualifiedRegex = /\b([a-z_][\w]*)\.([a-z_][\w]*)\b/ig;
+  const invalid = new Set();
+  while ((m = qualifiedRegex.exec(lowerSql)) !== null) {
+    const tbl = m[1];
+    const col = m[2];
+    // map alias to table if alias exists
+    const mappedTable = aliasMap[tbl] || tbl;
+    const full = `${mappedTable}.${col}`;
+    if (!validColumns.includes(full)) {
+      // not found — record original token (case-sensitive substring from original SQL)
+      const originalToken = sql.match(new RegExp(`\\b${m[1].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\.${m[2].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`));
+      invalid.add(originalToken ? originalToken[0] : `${tbl}.${col}`);
+    }
+  }
+
+  // 4) validate unqualified tokens (e.g., "stock" when used without table.)
+  // extract simple tokens but ignore numbers and SQL keywords
+  const tokenRegex = /\b([a-z_][\w]*)\b/ig;
+  while ((m = tokenRegex.exec(lowerSql)) !== null) {
+    const token = m[1];
+    // skip keywords and already-validated qualified tokens and function names
+    if (sqlKeywords.has(token)) continue;
+    if (/^\d+$/.test(token)) continue;
+
+    // If token appears as part of qualified token (handled above), skip
+    const ahead = lowerSql.slice(Math.max(0, m.index - 3), m.index + token.length + 2);
+    if (/\.[a-z_]/.test(ahead) || /\b[a-z_][\w]*\.\b/.test(ahead)) continue;
+
+    // check whether any valid column ends with .token
+    const found = validColumns.some(c => c.endsWith('.' + token));
+    if (!found) {
+      // exclude common function names or alias names that were mapped
+      if (aliasMap[token]) continue;
+      // record original token (case preserved if present)
+      const origMatch = sql.match(new RegExp(`\\b${token}\\b`));
+      invalid.add(origMatch ? origMatch[0] : token);
+    }
+  }
+
+  return Array.from(invalid);
+}
+
+
+// Data validation function
+function validateResponseAgainstData(response, data, question) {
+  const responseLower = response.toLowerCase();
+  
+  // Check for common hallucination patterns
+  const hallucinationIndicators = [
+    'i assume', 'probably', 'likely', 'approximately',
+    'typically', 'usually', 'based on common practice',
+    'generally', 'most likely'
+  ];
+  
+  // If no data but response claims to have data
+  if ((!data || (Array.isArray(data) && data.length === 0) || 
+       (typeof data === 'object' && Object.keys(data).length === 0)) &&
+      !responseLower.includes('no data') &&
+      !responseLower.includes('not found') &&
+      !responseLower.includes('unavailable')) {
+    return "No relevant data found in the system for your query.";
+  }
+  
+  // If response contains hallucination indicators
+  if (hallucinationIndicators.some(indicator => responseLower.includes(indicator))) {
+    return "I can only provide information based on actual data in the system. Please ask about specific records or check the available data.";
+  }
+  
+  return response;
 }
 
 // Enhanced response formatter
@@ -449,7 +654,7 @@ const getRelevantData = async (db, user, question) => {
            FROM orders o
            JOIN order_items oi ON o.id = oi.order_id
            WHERE oi.status = 'pending'
-           GROUP BY o.id
+           GROUP BY o.id, o.order_no
            ORDER BY o.created_at ASC
            LIMIT $1`,
           [params.limit]
@@ -660,69 +865,76 @@ const handleChatbotQuery = async (req, res) => {
     const db = req.app.locals.db;
     let data;
 
-    // First try dynamic SQL approach
+    // First try VALIDATED SQL approach
     try {
-      const sqlQuery = await generateDynamicSQL(user, query);
-      console.log('Generated SQL:', sqlQuery);
-      
-      const result = await db.query(sqlQuery);
-      data = result.rows;
+      const sqlQuery = await generateValidatedSQL(query, user.role);
+      if (sqlQuery) {
+        console.log('Generated SQL:', sqlQuery);
+        const result = await db.query(sqlQuery);
+        data = result.rows;
+        
+        // If no data from dynamic query, use predefined
+        if (!data || data.length === 0) {
+          data = await getRelevantData(db, user, query.trim());
+        }
+      } else {
+        data = await getRelevantData(db, user, query.trim());
+      }
     } catch (sqlError) {
-      console.log('Dynamic SQL failed, falling back to predefined queries:', sqlError.message);
-      // Fall back to your predefined queries
+      console.log('Dynamic SQL failed:', sqlError.message);
       data = await getRelevantData(db, user, query.trim());
     }
 
-    // Prepare context for AI
-    const messages = [
-      {
-        role: 'system',
-        content: SYSTEM_PROMPTS[user.role] || SYSTEM_PROMPTS.institute
-      },
-      ...conversation_history,
-      {
-        role: 'user',
-        content: `Question: ${query}\n\nData Context:\n${
-          Array.isArray(data) 
-            ? JSON.stringify(data.slice(0, 5), null, 2)
-            : JSON.stringify({
-                drugs: data.drugs?.slice(0, 5),
-                orders: data.orders?.slice(0, 3),
-                expiring_soon: data.expiring_soon?.slice(0, 5)
-              }, null, 2)
-        }`
+    let aiReply;
+
+    // Enhanced AI call with strict instructions
+    try {
+      const systemPrompt = STRICT_SYSTEM_PROMPTS[user.role] || STRICT_SYSTEM_PROMPTS.institute;
+      
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        ...conversation_history,
+        { 
+          role: 'user', 
+          content: `USER QUESTION: "${query}"
+          
+AVAILABLE DATA CONTEXT:
+${JSON.stringify(data, null, 2)}
+
+STRICT INSTRUCTIONS:
+- Answer ONLY using the data above
+- If data is empty/missing, say "No data available"
+- Never invent or assume values
+- Be precise and factual` 
+        }
+      ];
+
+      const response = await fetchWithTimeout(
+        `${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}/api/chat`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: process.env.OLLAMA_MODEL || 'gemma2:9b',
+            messages: messages,
+            stream: false,
+            options: { temperature: 0.1, num_predict: 800 } // Lower temperature for less creativity
+          })
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        aiReply = result.message?.content;
+        
+        // Validate the response against data
+        aiReply = validateResponseAgainstData(aiReply, data, query);
+        
+      } else {
+        throw new Error('AI service unavailable');
       }
-    ];
-
-    // Call AI service
-    const response = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:8080'
-        },
-        body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free',
-          messages,
-          temperature: 0.5,
-          max_tokens: 1000
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorBody = await response.json();
-      throw new Error(`AI API error: ${errorBody.error?.message || response.status}`);
-    }
-
-    const result = await response.json();
-    let aiReply = result.choices?.[0]?.message?.content;
-
-    // If AI gives no reply, use our formatter
-    if (!aiReply || aiReply.includes("sorry") || aiReply.includes("couldn't find")) {
+    } catch (aiError) {
+      console.log('AI failed, using formatted response:', aiError.message);
       aiReply = formatResponse(data, user.role, query);
     }
 
@@ -734,10 +946,10 @@ const handleChatbotQuery = async (req, res) => {
 
   } catch (error) {
     console.error('Chatbot error:', error.message);
+    
     return res.status(500).json({
-      reply: "I'm having trouble answering that. Please try rephrasing your question.",
-      error: error.message,
-      suggestion: "Try asking about drugs, orders, or inventory status."
+      reply: "I'm experiencing technical difficulties. Please try again later or contact support if the issue persists.",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

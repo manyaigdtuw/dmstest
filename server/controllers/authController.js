@@ -75,16 +75,16 @@ const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user with default role ('pharmacy') and status ('Pending')
+    // Insert new user with role 'institute' and status 'Pending'
     const result = await db.query(
       `INSERT INTO users (
         name, email, password, phone,
         street, city, state, postal_code, country,
-        license_number
+        license_number, role, status
       ) VALUES (
         $1, $2, $3, $4,
         $5, $6, $7, $8, $9,
-        $10
+        $10, 'institute', 'Pending'
       ) RETURNING id, name, email, status, role`,
       [
         name,
@@ -105,7 +105,7 @@ const register = async (req, res) => {
     res.status(201).json({
       message: 'Registration successful. Your account is pending approval.',
       status: true,
-      user: newUser, // This will include the default role and status
+      user: newUser,
     });
   } catch (err) {
     res.status(500).json({
@@ -115,7 +115,6 @@ const register = async (req, res) => {
     });
   }
 };
-
 
 
 let rateLimiter; // Initialize once globally

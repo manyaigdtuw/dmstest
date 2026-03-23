@@ -1,8 +1,10 @@
+// routes/sellerRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
   listSellerOrders,
-  updateOrderItemStatus
+  updateOrderItemStatus,
+  approveAllItems // Add this import
 } = require('../controllers/sellerController');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeRole = require('../middlewares/roleMiddleware');
@@ -21,6 +23,14 @@ router.patch(
   verifyToken, 
   authorizeRole('institute', 'admin'), 
   updateOrderItemStatus
+);
+
+// Approve all items in an order
+router.patch(
+  '/orders/:orderId/approve-all', 
+  verifyToken, 
+  authorizeRole('institute', 'admin'), 
+  approveAllItems
 );
 
 module.exports = router;

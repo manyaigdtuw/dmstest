@@ -3,6 +3,8 @@ const router = express.Router();
 const drugTypeName = require('../controllers/drugTypeName');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeRole = require('../middlewares/roleMiddleware');
+const upload = require('../middlewares/upload'); // Add this import
+const drugTypeImport = require('../controllers/drugTypeImportController');
 
 router.get('/drug-types', verifyToken, drugTypeName.getAllDrugTypes);
 
@@ -13,5 +15,11 @@ router.post('/drug-types', verifyToken, authorizeRole('admin'), drugTypeName.add
 router.post('/drug-names', verifyToken, authorizeRole('admin'), drugTypeName.addDrugName);
 router.delete('/drug-types/:typeId', verifyToken, authorizeRole('admin'), drugTypeName.deleteDrugType);
 router.delete('/drug-names/:drugId', verifyToken, authorizeRole('admin'), drugTypeName.deleteDrugName);
+router.post('/import-drug-types', 
+  verifyToken, 
+  authorizeRole('admin'), 
+  upload.single('file'), 
+  drugTypeImport.importDrugTypes
+);
 
 module.exports = router;
