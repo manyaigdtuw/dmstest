@@ -34,7 +34,7 @@ const DrugsTable = () => {
     addedBy: '',
     expDateRange: [null, null],
   });
-  const [sortBy, setSortBy] = useState('updated_at'); // Default sort by last updated
+  const [sortBy, setSortBy] = useState('default'); // Default: A-Z natural order
   
   const exportToCSV = () => {
     try {
@@ -360,25 +360,32 @@ const DrugsTable = () => {
       });
     }
 
-    // Apply sorting
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'updated_at':
-          return new Date(b.updated_at) - new Date(a.updated_at); // newest first
-        case 'mfg_date':
-          return new Date(a.mfg_date) - new Date(b.mfg_date); // oldest first
-        case 'exp_date':
-          return new Date(a.exp_date) - new Date(b.exp_date); // oldest first
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'stock':
-          return a.stock - b.stock;
-        case 'price':
-          return a.price - b.price;
-        default:
-          return new Date(b.updated_at) - new Date(a.updated_at);
-      }
-    });
+    // Apply sorting - A-Z is the natural default order
+    switch (sortBy) {
+      case 'default':
+        result.sort((a, b) => a.name.localeCompare(b.name)); // A to Z (natural order)
+        break;
+      case 'name_desc':
+        result.sort((a, b) => b.name.localeCompare(a.name)); // Z to A
+        break;
+      case 'updated_at':
+        result.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)); // newest first
+        break;
+      case 'mfg_date':
+        result.sort((a, b) => new Date(a.mfg_date) - new Date(b.mfg_date)); // oldest first
+        break;
+      case 'exp_date':
+        result.sort((a, b) => new Date(a.exp_date) - new Date(b.exp_date)); // oldest first
+        break;
+      case 'stock':
+        result.sort((a, b) => a.stock - b.stock);
+        break;
+      case 'price':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      default:
+        result.sort((a, b) => a.name.localeCompare(b.name)); // A to Z
+    }
 
     // Update pagination
     const total = result.length;
@@ -432,7 +439,7 @@ const DrugsTable = () => {
       expDateRange: [null, null],
     });
     setSearchTerm('');
-    setSortBy('updated_at');
+    setSortBy('default'); // Return to default A-Z order
   };
 
   const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
@@ -736,14 +743,17 @@ const DrugsTable = () => {
                 <FiFilter className="mr-2" />
                 Filters
               </button>
-              {(filters.expiringSoon ||
-                filters.lowStock ||
-                filters.category ||
-                filters.drugType ||
-                filters.addedBy ||
-                filters.priceRange[0] ||
-                filters.priceRange[1] ||
-                sortBy !== 'updated_at') && (
+              {(filters.expiringSoon !== false ||
+                filters.lowStock !== false ||
+                filters.category !== '' ||
+                filters.drugType !== '' ||
+                filters.addedBy !== '' ||
+                filters.priceRange[0] !== '' ||
+                filters.priceRange[1] !== '' ||
+                filters.expDateRange[0] !== null ||
+                filters.expDateRange[1] !== null ||
+                searchTerm !== '' ||
+                sortBy !== 'default') && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
@@ -903,6 +913,8 @@ const DrugsTable = () => {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="w-full px-2 py-1 border border-gray-300 rounded-md"
                   >
+                    <option value="default">Default Order (A-Z)</option>
+                    <option value="name_desc">Name (Z to A)</option>
                     <option value="updated_at">Last Updated (Newest)</option>
                     <option value="mfg_date">Manufacturing Date (Oldest)</option>
                     <option value="exp_date">Expiration Date (Oldest)</option>
@@ -1097,10 +1109,11 @@ const DrugsTable = () => {
                           name="price"
                           value={newDrug.price}
                           onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
+                          className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
                           min="0"
                           step="0.01"
                           required
+                          placeholder="0.00"
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1291,10 +1304,11 @@ const DrugsTable = () => {
                                 name="price"
                                 value={drug.price}
                                 onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
                                 min="0"
                                 step="0.01"
                                 required
+                                placeholder="0.00"
                               />
                             ) : (
                               <span className="text-sm text-gray-500 font-medium">
