@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS drugs (
     exp_date DATE NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
+    category TEXT CHECK (category IN ('IPD', 'OPD', 'IEC', 'OUTREACH', NULL)),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   unit_price DECIMAL(10,2),
   total_price DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
   source_type TEXT CHECK (source_type IN ('institute', 'manufacturer')),
-  category TEXT CHECK (category IN ('IPD', 'OPD', 'OUTREACH', NULL)),
+  category TEXT CHECK (category IN ('IPD', 'OPD', 'IEC', 'OUTREACH', NULL)),
   batch_no TEXT,
   seller_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'pending'
@@ -121,7 +121,7 @@ CREATE TABLE daily_dispensing_summary (
     drug_id INTEGER REFERENCES drugs(id) ON DELETE CASCADE,
     quantity_dispensed INTEGER NOT NULL,
     dispensing_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    category VARCHAR(50) CHECK (category IN ('IPD', 'OPD', 'OUTREACH')),
+    category VARCHAR(50) CHECK (category IN ('IPD', 'OPD', 'IEC', 'OUTREACH')),
     notes TEXT,
     recorded_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),

@@ -36,6 +36,7 @@ const AnalyticsDashboard = () => {
     totalDrugs: 0,
     ipdDrugs: 0,
     opdDrugs: 0,
+    iecDrugs: 0,
     outreachDrugs: 0,
     loading: true,
   });
@@ -283,18 +284,20 @@ const AnalyticsDashboard = () => {
   };
 
   const categoryDistributionData = {
-    labels: ['IPD', 'OPD', 'OUTREACH', 'Uncategorized'],
+    labels: ['IPD', 'OPD', 'IEC', 'OUTREACH', 'Uncategorized'],
     datasets: [
       {
         data: [
           chartsData.categoryDistribution?.ipd || 0,
           chartsData.categoryDistribution?.opd || 0,
+          chartsData.categoryDistribution?.iec || 0,
           chartsData.categoryDistribution?.outreach || 0,
           chartsData.categoryDistribution?.uncategorized || 0,
         ],
         backgroundColor: [
           '#3B82F6', // Blue
           '#10B981', // Green
+          '#14B8A6', // Teal
           '#F59E0B', // Yellow
           '#9CA3AF', // Gray
         ],
@@ -401,7 +404,7 @@ const AnalyticsDashboard = () => {
               </div>
 
               {/* Category Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                   icon={<FaProcedures className="w-5 h-5 sm:w-6 sm:h-6" />}
                   title="IPD Drugs"
@@ -417,8 +420,16 @@ const AnalyticsDashboard = () => {
                   color="blue"
                 />
                 <StatCard
+                  icon={<FaClinicMedical className="w-5 h-5 sm:w-6 sm:h-6" />}
+                  title="IEC Drugs"
+                  value={stats.iecDrugs || 0}
+                  loading={stats.loading}
+                  color="teal"
+                />
+                <StatCard
                   icon={<FaHandsHelping className="w-5 h-5 sm:w-6 sm:h-6" />}
-                  title="OUTREACH Drugs"
+                  title="
+                  OUTREACH Drugs"
                   value={stats.outreachDrugs || 0}
                   loading={stats.loading}
                   color="green"
@@ -1069,6 +1080,11 @@ const StatCard = ({ icon, title, value, loading, color = 'blue' }) => {
       bg: 'bg-green-50',
       text: 'text-green-600',
       iconBg: 'bg-green-100',
+    },
+    teal: {
+      bg: 'bg-teal-50',
+      text: 'text-teal-600',
+      iconBg: 'bg-teal-100',
     },
     purple: {
       bg: 'bg-purple-50',

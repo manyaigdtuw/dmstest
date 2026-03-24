@@ -200,6 +200,9 @@ const DrugsTable = () => {
       });
     }
 
+    // Sort alphabetically by name
+    result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
     // Update pagination
     const total = result.length;
     const totalPages = Math.ceil(total / pagination.limit);
@@ -873,6 +876,7 @@ const DrugsTable = () => {
                           <option value="">N/A</option>
                           <option value="IPD">IPD</option>
                           <option value="OPD">OPD</option>
+                          <option value="IEC">IEC</option>
                           <option value="OUTREACH">OUTREACH</option>
                         </select>
                       </td>
@@ -1089,6 +1093,7 @@ const DrugsTable = () => {
                                 <option value="">N/A</option>
                                 <option value="IPD">IPD</option>
                                 <option value="OPD">OPD</option>
+                                <option value="IEC">IEC</option>
                                 <option value="OUTREACH">OUTREACH</option>
                               </select>
                             ) : (
@@ -1098,6 +1103,8 @@ const DrugsTable = () => {
                                     ? 'bg-blue-100 text-blue-800'
                                     : drug.category === 'OPD'
                                     ? 'bg-purple-100 text-purple-800'
+                                    : drug.category === 'IEC'
+                                    ? 'bg-teal-100 text-teal-800'
                                     : drug.category === 'OUTREACH'
                                     ? 'bg-orange-100 text-orange-800'
                                     : 'bg-gray-100 text-gray-800'

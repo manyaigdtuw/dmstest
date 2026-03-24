@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import {
-  FiEdit2,
-  FiTrash2,
-  FiPlus,
-  FiSearch,
-  FiFilter,
-  FiX,
-  FiSave,
-  FiCheck,
-  FiXCircle,
-  FiUpload,
-} from 'react-icons/fi';
+import { FiSearch, FiFilter, FiX } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
 import DatePicker from 'react-datepicker';
@@ -31,19 +20,6 @@ const DrugsTable = () => {
     drugType: '',
     expDateRange: [null, null],
   });
-  const [editingId, setEditingId] = useState(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newDrug, setNewDrug] = useState({
-    name: '',
-    description: '',
-    stock: 0,
-    mfg_date: '',
-    exp_date: '',
-    price: 0,
-    batch_no: '',
-    drug_type: '',
-    category: '',
-  });
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -53,46 +29,11 @@ const DrugsTable = () => {
     totalPages: 1,
   });
 
-  // State for drug types and names from database
-  const [drugTypes, setDrugTypes] = useState([]);
-  const [availableDrugNames, setAvailableDrugNames] = useState([]);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState(null);
-  const [importProgress, setImportProgress] = useState(null);
-  const [importErrors, setImportErrors] = useState([]);
-
-  // Fetch drug types from database
-  const fetchDrugTypes = async () => {
-    try {
-      const response = await api.get('/drug-types-names/drug-types');
-      if (response.data.status) {
-        setDrugTypes(response.data.drugTypes);
-      }
-    } catch (error) {
-      console.error('Error fetching drug types:', error);
-      toast.error('Failed to load drug types');
-    }
-  };
-
-  // Fetch drug names by type from database
-  const fetchDrugNamesByType = async (typeId) => {
-    try {
-      const response = await api.get(`/drug-types-names/drug-names/${typeId}`);
-      if (response.data.status) {
-        setAvailableDrugNames(response.data.drugNames.map((item) => item.name));
-      } else {
-        setAvailableDrugNames([]);
-      }
-    } catch (error) {
-      console.error('Error fetching drug names:', error);
-      setAvailableDrugNames([]);
-    }
-  };
-
+  // Fetch pharmacy inventory from approved indent items
   const fetchDrugs = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/drugs');
+      const response = await api.get('/pharmacy/inventory');
 
       if (response.data && Array.isArray(response.data.drugs)) {
         setDrugs(response.data.drugs);
@@ -102,8 +43,8 @@ const DrugsTable = () => {
         setDrugs([]);
       }
     } catch (error) {
-      console.error('Error fetching drugs:', error);
-      toast.error(error.response?.data?.message || 'Failed to load drugs');
+      console.error('Error fetching pharmacy inventory:', error);
+      toast.error(error.response?.data?.message || 'Failed to load inventory');
       setDrugs([]);
     } finally {
       setIsLoading(false);
@@ -111,7 +52,6 @@ const DrugsTable = () => {
   };
 
   useEffect(() => {
-    fetchDrugTypes();
     fetchDrugs();
   }, []);
 
@@ -134,7 +74,7 @@ const DrugsTable = () => {
       const term = searchTerm.toLowerCase();
       result = result.filter(
         (drug) =>
-          drug.name.toLowerCase().includes(term) ||
+          drug.name?.toLowerCase().includes(term) ||
           drug.batch_no?.toLowerCase().includes(term) ||
           drug.description?.toLowerCase().includes(term) ||
           drug.drug_type?.toLowerCase().includes(term) ||
@@ -186,6 +126,9 @@ const DrugsTable = () => {
         return true;
       });
     }
+
+    // Sort alphabetically by name
+    result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     // Update pagination
     const total = result.length;
@@ -240,230 +183,6 @@ const DrugsTable = () => {
     setSearchTerm('');
   };
 
-  const handleDrugTypeChange = (e, isEditing = false, drugId = null) => {
-    const { value } = e.target;
-    const selectedType = drugTypes.find((type) => type.type_name === value);
-
-    if (isEditing) {
-      handleDrugChange(drugId, e);
-    } else {
-      handleAddChange(e);
-    }
-
-    if (selectedType) {
-      fetchDrugNamesByType(selectedType.id);
-    } else {
-      setAvailableDrugNames([]);
-    }
-
-    if (isEditing) {
-      handleDrugChange(drugId, { target: { name: 'name', value: '' } });
-    } else {
-      setNewDrug((prev) => ({ ...prev, name: '' }));
-    }
-  };
-
-  const handleEdit = (drug) => {
-    setEditingId(drug.id);
-    const selectedType = drugTypes.find(
-      (type) => type.type_name === drug.drug_type
-    );
-    if (selectedType) {
-      fetchDrugNamesByType(selectedType.id);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setAvailableDrugNames([]);
-  };
-
-  const handleAddNew = () => {
-    setIsAdding(true);
-    setNewDrug({
-      name: '',
-      description: '',
-      stock: 0,
-      mfg_date: '',
-      exp_date: '',
-      price: 0,
-      batch_no: '',
-      drug_type: '',
-      category: '',
-    });
-    setAvailableDrugNames([]);
-  };
-
-  const handleCancelAdd = () => {
-    setIsAdding(false);
-    setAvailableDrugNames([]);
-  };
-
-  const handleAddChange = (e) => {
-    const { name, value } = e.target;
-    setNewDrug((prev) => ({
-      ...prev,
-      [name]: name === 'stock' || name === 'price' ? Number(value) : value,
-    }));
-  };
-
-  const handleSaveNewDrug = async () => {
-    try {
-      if (new Date(newDrug.mfg_date) >= new Date(newDrug.exp_date)) {
-        toast.error('Manufacturing date must be before expiration date');
-        return;
-      }
-
-      if (!newDrug.batch_no || !newDrug.drug_type || !newDrug.name) {
-        toast.error('Batch number, drug type and name are required');
-        return;
-      }
-
-      setIsLoading(true);
-      await api.post('/drugs', newDrug);
-
-      toast.success('Drug added successfully!');
-      fetchDrugs();
-      setIsAdding(false);
-      setAvailableDrugNames([]);
-    } catch (error) {
-      console.error('Error adding drug:', error);
-      toast.error(error.response?.data?.message || 'Failed to add drug');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdate = async (id) => {
-    try {
-      const drugToUpdate = drugs.find((drug) => drug.id === id);
-      if (!drugToUpdate) return;
-
-      if (
-        !drugToUpdate.batch_no ||
-        !drugToUpdate.drug_type ||
-        !drugToUpdate.name
-      ) {
-        toast.error('Batch number, drug type and name are required');
-        return;
-      }
-
-      setIsLoading(true);
-      await api.put(`/drugs/${id}`, {
-        name: drugToUpdate.name,
-        description: drugToUpdate.description,
-        stock: drugToUpdate.stock,
-        price: drugToUpdate.price,
-        batch_no: drugToUpdate.batch_no,
-        drug_type: drugToUpdate.drug_type,
-        category: drugToUpdate.category,
-      });
-
-      toast.success('Drug updated successfully!');
-      setEditingId(null);
-      setAvailableDrugNames([]);
-      fetchDrugs();
-    } catch (error) {
-      console.error('Error updating drug:', error);
-      toast.error(error.response?.data?.message || 'Failed to update drug');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleImportClick = () => {
-    setShowImportModal(true);
-    setImportFile(null);
-    setImportProgress(null);
-    setImportErrors([]);
-  };
-
-  const handleFileChange = (e) => {
-    setImportFile(e.target.files[0]);
-  };
-
-  const handleImportSubmit = async () => {
-    if (!importFile) {
-      toast.error('Please select a file to upload');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', importFile);
-
-    try {
-      setImportProgress({ status: 'Uploading...', percent: 0 });
-
-      const response = await api.post('/drugs/import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setImportProgress({
-            status: 'Uploading...',
-            percent: percentCompleted,
-          });
-        },
-      });
-
-      setImportProgress({
-        status: 'Processing...',
-        percent: 100,
-      });
-
-      if (response.data.errors && response.data.errors.length > 0) {
-        setImportErrors(response.data.errors);
-        toast.warning(
-          `Import completed with ${response.data.successCount} successes and ${response.data.errors.length} errors`
-        );
-      } else {
-        toast.success(
-          `Successfully imported ${response.data.successCount} drugs`
-        );
-        fetchDrugs(); // Refresh the drug list
-        setShowImportModal(false);
-      }
-    } catch (error) {
-      console.error('Error importing drugs:', error);
-      toast.error(error.response?.data?.message || 'Failed to import drugs');
-    } finally {
-      setImportProgress(null);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this drug?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/drugs/${id}`);
-      toast.success('Drug deleted successfully');
-      fetchDrugs();
-    } catch (error) {
-      console.error('Error deleting drug:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete drug');
-    }
-  };
-
-  const handleDrugChange = (id, e) => {
-    const { name, value } = e.target;
-    setDrugs((prev) =>
-      prev.map((drug) =>
-        drug.id === id
-          ? {
-              ...drug,
-              [name]:
-                name === 'stock' || name === 'price' ? Number(value) : value,
-            }
-          : drug
-      )
-    );
-  };
-
   const uniqueCategories = [
     ...new Set(drugs.map((drug) => drug.category).filter(Boolean)),
   ];
@@ -479,23 +198,9 @@ const DrugsTable = () => {
             <FaPills className="mr-2 text-blue-600" />
             Drugs Inventory
           </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={handleImportClick}
-              className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
-            >
-              <FiUpload className="mr-2" />
-              Import CSV
-            </button>
-            <button
-              onClick={handleAddNew}
-              disabled={isAdding}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
-            >
-              <FiPlus className="mr-2" />
-              Add New Drug
-            </button>
-          </div>
+          <p className="text-sm text-gray-500">
+            Showing approved indent items
+          </p>
         </div>
 
         {/* Search and Filter Section */}
@@ -732,189 +437,22 @@ const DrugsTable = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {/* Add new drug row */}
-                  {isAdding && (
-                    <tr className="bg-blue-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          name="drug_type"
-                          value={newDrug.drug_type}
-                          onChange={(e) => handleDrugTypeChange(e)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          required
-                        >
-                          <option value="">Select Type</option>
-                          {drugTypes.map((type) => (
-                            <option key={type.id} value={type.type_name}>
-                              {type.type_name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {availableDrugNames.length > 0 ? (
-                          <select
-                            name="name"
-                            value={newDrug.name}
-                            onChange={handleAddChange}
-                            className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                            required
-                          >
-                            <option value="">Select Name</option>
-                            {availableDrugNames.map((name) => (
-                              <option key={name} value={name}>
-                                {name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            name="name"
-                            value={newDrug.name}
-                            onChange={handleAddChange}
-                            className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                            required
-                            placeholder="Enter drug name"
-                          />
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          name="batch_no"
-                          value={newDrug.batch_no}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          required
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="text"
-                          name="description"
-                          value={newDrug.description}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="date"
-                          name="mfg_date"
-                          value={newDrug.mfg_date}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          required
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="date"
-                          name="exp_date"
-                          value={newDrug.exp_date}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          required
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="number"
-                          name="price"
-                          value={newDrug.price}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          min="0"
-                          required
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="number"
-                          name="stock"
-                          value={newDrug.stock}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                          min="0"
-                          required
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          name="category"
-                          value={newDrug.category}
-                          onChange={handleAddChange}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                        >
-                          <option value="">N/A</option>
-                          <option value="IPD">IPD</option>
-                          <option value="OPD">OPD</option>
-                          <option value="OUTREACH">OUTREACH</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={handleSaveNewDrug}
-                            className="text-green-600 hover:text-green-800 transition-colors"
-                            title="Save"
-                          >
-                            <FiCheck className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={handleCancelAdd}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                            title="Cancel"
-                          >
-                            <FiXCircle className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-
                   {getPaginatedDrugs().length > 0 ? (
                     getPaginatedDrugs().map((drug) => {
                       const expiringSoon = isExpiringSoon(drug.exp_date);
-                      const isEditing = editingId === drug.id;
 
                       return (
                         <tr
-                          key={drug.id}
-                          className={`hover:bg-gray-50 transition-colors ${
-                            isEditing ? 'bg-yellow-50' : ''
-                          }`}
+                          key={drug.drug_id || drug.id}
+                          className="hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {isEditing ? (
-                              <select
-                                name="drug_type"
-                                value={drug.drug_type}
-                                onChange={(e) =>
-                                  handleDrugTypeChange(e, true, drug.id)
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                required
-                              >
-                                <option value="">Select Type</option>
-                                {drugTypes.map((type) => (
-                                  <option key={type.id} value={type.type_name}>
-                                    {type.type_name}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-sm text-gray-500">
-                                {drug.drug_type}
-                              </span>
-                            )}
+                            <span className="text-sm text-gray-500">
+                              {drug.drug_type}
+                            </span>
                           </td>
                           <td
                             className={`px-6 py-4 whitespace-nowrap ${
@@ -925,77 +463,26 @@ const DrugsTable = () => {
                               {expiringSoon && (
                                 <FaExclamationTriangle className="mr-2 text-red-500" />
                               )}
-                              {isEditing ? (
-                                availableDrugNames.length > 0 ? (
-                                  <select
-                                    name="name"
-                                    value={drug.name}
-                                    onChange={(e) =>
-                                      handleDrugChange(drug.id, e)
-                                    }
-                                    className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                    required
-                                  >
-                                    <option value="">Select Name</option>
-                                    {availableDrugNames.map((name) => (
-                                      <option key={name} value={name}>
-                                        {name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <input
-                                    type="text"
-                                    name="name"
-                                    value={drug.name}
-                                    onChange={(e) =>
-                                      handleDrugChange(drug.id, e)
-                                    }
-                                    className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                    required
-                                  />
-                                )
-                              ) : (
-                                <span className="text-sm font-medium">
-                                  {drug.name}
-                                </span>
-                              )}
+                              <span className="text-sm font-medium">
+                                {drug.name}
+                              </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                name="batch_no"
-                                value={drug.batch_no}
-                                onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                required
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-500">
-                                {drug.batch_no}
-                              </span>
-                            )}
+                            <span className="text-sm text-gray-500">
+                              {drug.batch_no}
+                            </span>
                           </td>
                           <td className="px-6 py-4">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                name="description"
-                                value={drug.description}
-                                onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-500 max-w-xs truncate">
-                                {drug.description}
-                              </span>
-                            )}
+                            <span className="text-sm text-gray-500 max-w-xs truncate">
+                              {drug.description}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-gray-500">
-                              {new Date(drug.mfg_date).toLocaleDateString()}
+                              {drug.mfg_date
+                                ? new Date(drug.mfg_date).toLocaleDateString()
+                                : '-'}
                             </span>
                           </td>
                           <td
@@ -1006,120 +493,46 @@ const DrugsTable = () => {
                             }`}
                           >
                             <span className="text-sm">
-                              {new Date(drug.exp_date).toLocaleDateString()}
+                              {drug.exp_date
+                                ? new Date(drug.exp_date).toLocaleDateString()
+                                : '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                name="price"
-                                value={drug.price}
-                                onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                min="0"
-                                step="0.01"
-                                required
-                              />
-                            ) : (
-                              <span className="text-sm text-gray-500 font-medium">
-                                ₹
-                                {typeof drug.price === 'number'
-                                  ? drug.price.toFixed(2)
-                                  : parseFloat(drug.price).toFixed(2)}
-                              </span>
-                            )}
+                            <span className="text-sm text-gray-500 font-medium">
+                              ₹
+                              {typeof drug.price === 'number'
+                                ? drug.price.toFixed(2)
+                                : parseFloat(drug.price).toFixed(2)}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                name="stock"
-                                value={drug.stock}
-                                onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                                min="0"
-                                required
-                              />
-                            ) : (
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${
-                                  drug.stock > 10
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                                }`}
-                              >
-                                {drug.stock} in stock
-                              </span>
-                            )}
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                drug.stock > 10
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}
+                            >
+                              {drug.stock} in stock
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {isEditing ? (
-                              <select
-                                name="category"
-                                value={drug.category}
-                                onChange={(e) => handleDrugChange(drug.id, e)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                              >
-                                <option value="">N/A</option>
-                                <option value="IPD">IPD</option>
-                                <option value="OPD">OPD</option>
-                                <option value="OUTREACH">OUTREACH</option>
-                              </select>
-                            ) : (
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${
-                                  drug.category === 'IPD'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : drug.category === 'OPD'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : drug.category === 'OUTREACH'
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {drug.category || 'N/A'}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex space-x-2">
-                              {isEditing ? (
-                                <>
-                                  <button
-                                    onClick={() => handleUpdate(drug.id)}
-                                    className="text-green-600 hover:text-green-800 transition-colors"
-                                    title="Save"
-                                  >
-                                    <FiSave className="h-5 w-5" />
-                                  </button>
-                                  <button
-                                    onClick={handleCancelEdit}
-                                    className="text-red-600 hover:text-red-800 transition-colors"
-                                    title="Cancel"
-                                  >
-                                    <FiXCircle className="h-5 w-5" />
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handleEdit(drug)}
-                                    className="text-blue-600 hover:text-blue-800 transition-colors"
-                                    title="Edit"
-                                  >
-                                    <FiEdit2 className="h-5 w-5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(drug.id)}
-                                    className="text-red-600 hover:text-red-800 transition-colors"
-                                    title="Delete"
-                                  >
-                                    <FiTrash2 className="h-5 w-5" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                drug.category === 'IPD'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : drug.category === 'OPD'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : drug.category === 'IEC'
+                                  ? 'bg-teal-100 text-teal-800'
+                                  : drug.category === 'OUTREACH'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {drug.category || 'N/A'}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -1127,10 +540,10 @@ const DrugsTable = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan="10"
+                        colSpan="9"
                         className="px-6 py-4 text-center text-sm text-gray-500"
                       >
-                        No drugs found matching your criteria
+                        No approved indent items found. Items will appear here once your institute approves your indents.
                       </td>
                     </tr>
                   )}
@@ -1159,101 +572,6 @@ const DrugsTable = () => {
                 </button>
               </div>
             )}
-          </div>
-        )}
-        {showImportModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Import Drugs from CSV</h3>
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FiX className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select CSV File
-                </label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  CSV should include columns: Drug Type, Name, Batch No,
-                  Description, Stock, Manufacturing Date (DD-MM-YYYY), Expiration Date (DD-MM-YYYY),
-                  Price, Category
-                </p>
-              </div>
-
-              {importProgress && (
-                <div className="mb-4">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">
-                      {importProgress.status}
-                    </span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {importProgress.percent}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: `${importProgress.percent}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-
-              {importErrors.length > 0 && (
-                <div className="mb-4 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-medium text-red-700 mb-2">
-                    Errors ({importErrors.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {importErrors.map((error, index) => (
-                      <div
-                        key={index}
-                        className="text-sm text-red-600 p-2 bg-red-50 rounded"
-                      >
-                        <p>
-                          <strong>Row {error.row}:</strong> {error.error}
-                        </p>
-                        <pre className="text-xs text-gray-600 mt-1 overflow-x-auto">
-                          {JSON.stringify(error.data, null, 2)}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleImportSubmit}
-                  disabled={!importFile || importProgress}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Import
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>

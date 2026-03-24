@@ -58,6 +58,7 @@ const AnalyticsDashboard = () => {
           totalDrugs: statsResponse.data.stats.totalDrugs,
           ipdDrugs: statsResponse.data.stats.ipdDrugs || 0,
           opdDrugs: statsResponse.data.stats.opdDrugs || 0,
+          iecDrugs: statsResponse.data.stats.iecDrugs || 0,
           outreachDrugs: statsResponse.data.stats.outreachDrugs || 0,
           loading: false,
         });
@@ -148,18 +149,20 @@ const AnalyticsDashboard = () => {
   };
 
   const categoryDistributionData = {
-    labels: ['IPD', 'OPD', 'OUTREACH', 'Uncategorized'],
+    labels: ['IPD', 'OPD', 'IEC', 'OUTREACH', 'Uncategorized'],
     datasets: [
       {
         data: [
           chartsData.categoryDistribution?.ipd || 0,
           chartsData.categoryDistribution?.opd || 0,
+          chartsData.categoryDistribution?.iec || 0,
           chartsData.categoryDistribution?.outreach || 0,
           chartsData.categoryDistribution?.uncategorized || 0,
         ],
         backgroundColor: [
           '#3B82F6', // Blue
           '#10B981', // Green
+          '#14B8A6', // Teal
           '#F59E0B', // Yellow
           '#9CA3AF', // Gray
         ],
@@ -220,7 +223,7 @@ const AnalyticsDashboard = () => {
           <TabPanel>
             <div className="mt-6">
               {/* Statistics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <StatCard
                   icon={<FaPills className="w-6 h-6" />}
                   title="Total Drugs"
@@ -241,6 +244,13 @@ const AnalyticsDashboard = () => {
                   value={stats.opdDrugs}
                   loading={stats.loading}
                   color="orange"
+                />
+                <StatCard
+                  icon={<FaBoxes className="w-6 h-6" />}
+                  title="IEC Drugs"
+                  value={stats.iecDrugs}
+                  loading={stats.loading}
+                  color="teal"
                 />
                 <StatCard
                   icon={<FaBoxes className="w-6 h-6" />}

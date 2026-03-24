@@ -24,9 +24,10 @@ const getDashboardStats = async (req, res) => {
       
       // Add category-specific drug counts
       const categoryCounts = await db.query(`
-        SELECT 
+        SELECT
           SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
           SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN category = 'IEC' THEN 1 ELSE 0 END) as iec,
           SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach
         FROM drugs
       `);
@@ -38,6 +39,7 @@ const getDashboardStats = async (req, res) => {
         totalDrugs: parseInt(drugsCount.rows[0].count),
         ipdDrugs: parseInt(categoryCounts.rows[0].ipd || 0),
         opdDrugs: parseInt(categoryCounts.rows[0].opd || 0),
+        iecDrugs: parseInt(categoryCounts.rows[0].iec || 0),
         outreachDrugs: parseInt(categoryCounts.rows[0].outreach || 0),
       };
     } else if (userRole === 'institute') {
@@ -54,9 +56,10 @@ const getDashboardStats = async (req, res) => {
       
       // Add category-specific drug counts for institute
       const categoryCounts = await db.query(`
-        SELECT 
+        SELECT
           SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
           SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN category = 'IEC' THEN 1 ELSE 0 END) as iec,
           SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach
         FROM drugs
         WHERE created_by = $1
@@ -67,29 +70,41 @@ const getDashboardStats = async (req, res) => {
         totalDrugs: parseInt(drugsCount.rows[0].count),
         ipdDrugs: parseInt(categoryCounts.rows[0].ipd || 0),
         opdDrugs: parseInt(categoryCounts.rows[0].opd || 0),
+        iecDrugs: parseInt(categoryCounts.rows[0].iec || 0),
         outreachDrugs: parseInt(categoryCounts.rows[0].outreach || 0),
       };
     } else if (userRole === 'pharmacy') {
-      // Pharmacy can only see their own drugs count
-      const drugsCount = await db.query(
-        'SELECT COUNT(*) FROM drugs WHERE created_by = $1',
-        [userId]
-      );
-      
+      // Pharmacy can only see their own inventory from approved orders
+      // Get distinct drug count (unique drugs in inventory)
+      const drugsCount = await db.query(`
+        SELECT COUNT(DISTINCT d.id) FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN drugs d ON oi.drug_id = d.id
+        WHERE o.user_id = $1
+          AND oi.status = 'approved'
+          AND o.transaction_type = 'institute'
+      `, [userId]);
+
       // Add category-specific drug counts for pharmacy
       const categoryCounts = await db.query(`
-        SELECT 
-          SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
-          SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
-          SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach
-        FROM drugs
-        WHERE created_by = $1
+        SELECT
+          SUM(CASE WHEN d.category = 'IPD' THEN 1 ELSE 0 END) as ipd,
+          SUM(CASE WHEN d.category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN d.category = 'IEC' THEN 1 ELSE 0 END) as iec,
+          SUM(CASE WHEN d.category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN drugs d ON oi.drug_id = d.id
+        WHERE o.user_id = $1
+          AND oi.status = 'approved'
+          AND o.transaction_type = 'institute'
       `, [userId]);
 
       stats = {
         totalDrugs: parseInt(drugsCount.rows[0].count),
         ipdDrugs: parseInt(categoryCounts.rows[0].ipd || 0),
         opdDrugs: parseInt(categoryCounts.rows[0].opd || 0),
+        iecDrugs: parseInt(categoryCounts.rows[0].iec || 0),
         outreachDrugs: parseInt(categoryCounts.rows[0].outreach || 0),
       };
     } else {
@@ -189,11 +204,12 @@ const getChartsData = async (req, res) => {
         LIMIT 10
       `);
 
-      // Category distribution (OPD/IPD/OUTREACH)
+      // Category distribution (IPD/OPD/IEC/OUTREACH)
       const categoryDistributionResult = await db.query(`
-        SELECT 
+        SELECT
           SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
           SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN category = 'IEC' THEN 1 ELSE 0 END) as iec,
           SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
           SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
         FROM drugs
@@ -240,6 +256,7 @@ const getChartsData = async (req, res) => {
         categoryDistribution: {
           ipd: parseInt(categoryDistribution.ipd || 0),
           opd: parseInt(categoryDistribution.opd || 0),
+          iec: parseInt(categoryDistribution.iec || 0),
           outreach: parseInt(categoryDistribution.outreach || 0),
           uncategorized: parseInt(categoryDistribution.uncategorized || 0),
         },
@@ -324,16 +341,21 @@ const getChartsData = async (req, res) => {
         [userId]
       );
 
-      // Category distribution (OPD/IPD/OUTREACH)
+      // Category distribution (OPD/IPD/IEC/OUTREACH)
       const categoryDistributionResult = await db.query(
         `
-        SELECT 
-          SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
-          SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
-          SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
-          SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
-        FROM drugs
-        WHERE created_by = $1
+        SELECT
+          SUM(CASE WHEN d.category = 'IPD' THEN 1 ELSE 0 END) as ipd,
+          SUM(CASE WHEN d.category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN d.category = 'IEC' THEN 1 ELSE 0 END) as iec,
+          SUM(CASE WHEN d.category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
+          SUM(CASE WHEN d.category IS NULL THEN 1 ELSE 0 END) as uncategorized
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN drugs d ON oi.drug_id = d.id
+        WHERE o.user_id = $1
+          AND oi.status = 'approved'
+          AND o.transaction_type = 'institute'
       `,
         [userId]
       );
@@ -373,75 +395,91 @@ const getChartsData = async (req, res) => {
         categoryDistribution: {
           ipd: parseInt(categoryDistribution.ipd || 0),
           opd: parseInt(categoryDistribution.opd || 0),
+          iec: parseInt(categoryDistribution.iec || 0),
           outreach: parseInt(categoryDistribution.outreach || 0),
           uncategorized: parseInt(categoryDistribution.uncategorized || 0),
         },
       };
     } else if (userRole === 'pharmacy') {
-      // Pharmacy can only see their own drugs data
+      // Pharmacy can only see their own drugs data from approved orders
       // Drug types distribution
       const drugTypesResult = await db.query(
         `
-        SELECT drug_type as type, COUNT(*) as count 
-        FROM drugs 
-        WHERE created_by = $1
-        GROUP BY drug_type 
+        SELECT d.drug_type as type, COUNT(DISTINCT d.id) as count
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN drugs d ON oi.drug_id = d.id
+        WHERE o.user_id = $1
+          AND oi.status = 'approved'
+          AND o.transaction_type = 'institute'
+        GROUP BY d.drug_type
         ORDER BY count DESC
         LIMIT 10
       `,
         [userId]
       );
 
-      // Stock levels
+      // Stock levels - based on approved order quantities
       const stockLevelsResult = await db.query(`
-        SELECT 
-          SUM(CASE WHEN stock < 10 THEN 1 ELSE 0 END) as low,
-          SUM(CASE WHEN stock >= 10 AND stock <= 50 THEN 1 ELSE 0 END) as medium,
-          SUM(CASE WHEN stock > 50 THEN 1 ELSE 0 END) as high
-        FROM drugs
-        WHERE created_by = $1
+        SELECT
+          SUM(CASE WHEN total_stock < 10 THEN 1 ELSE 0 END) as low,
+          SUM(CASE WHEN total_stock >= 10 AND total_stock <= 50 THEN 1 ELSE 0 END) as medium,
+          SUM(CASE WHEN total_stock > 50 THEN 1 ELSE 0 END) as high
+        FROM (
+          SELECT d.id, COALESCE(SUM(oi.quantity), 0) as total_stock
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          JOIN drugs d ON oi.drug_id = d.id
+          WHERE o.user_id = $1
+            AND oi.status = 'approved'
+            AND o.transaction_type = 'institute'
+          GROUP BY d.id
+        ) as pharmacy_inventory
       `, [userId]);
 
-      // Order statuses
+      // Order statuses - based on orders placed by this pharmacy
       const orderStatusesResult = await db.query(`
-        SELECT 
+        SELECT
           SUM(CASE WHEN oi.status = 'pending' THEN 1 ELSE 0 END) as pending,
           SUM(CASE WHEN oi.status = 'approved' THEN 1 ELSE 0 END) as approved,
           SUM(CASE WHEN oi.status = 'shipped' THEN 1 ELSE 0 END) as shipped,
           SUM(CASE WHEN oi.status = 'rejected' THEN 1 ELSE 0 END) as rejected,
           SUM(CASE WHEN oi.status = 'out_of_stock' THEN 1 ELSE 0 END) as out_of_stock
         FROM order_items oi
-        JOIN drugs d ON oi.drug_id = d.id
-        WHERE d.created_by = $1
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.user_id = $1
       `, [userId]);
 
       // Revenue trends (last 6 months)
       const revenueTrendsResult = await db.query(
         `
-        SELECT 
+        SELECT
           TO_CHAR(DATE_TRUNC('month', o.created_at), 'Mon YYYY') as month,
           SUM(o.total_amount) as revenue
         FROM orders o
-        JOIN order_items oi ON o.id = oi.order_id
-        JOIN drugs d ON oi.drug_id = d.id
         WHERE o.created_at >= NOW() - INTERVAL '6 months'
-        AND d.created_by = $1
+        AND o.user_id = $1
         GROUP BY DATE_TRUNC('month', o.created_at)
         ORDER BY DATE_TRUNC('month', o.created_at)
       `,
         [userId]
       );
 
-      // Category distribution (OPD/IPD/OUTREACH)
+      // Category distribution (OPD/IPD/IEC/OUTREACH)
       const categoryDistributionResult = await db.query(
         `
-        SELECT 
-          SUM(CASE WHEN category = 'IPD' THEN 1 ELSE 0 END) as ipd,
-          SUM(CASE WHEN category = 'OPD' THEN 1 ELSE 0 END) as opd,
-          SUM(CASE WHEN category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
-          SUM(CASE WHEN category IS NULL THEN 1 ELSE 0 END) as uncategorized
-        FROM drugs
-        WHERE created_by = $1
+        SELECT
+          SUM(CASE WHEN d.category = 'IPD' THEN 1 ELSE 0 END) as ipd,
+          SUM(CASE WHEN d.category = 'OPD' THEN 1 ELSE 0 END) as opd,
+          SUM(CASE WHEN d.category = 'IEC' THEN 1 ELSE 0 END) as iec,
+          SUM(CASE WHEN d.category = 'OUTREACH' THEN 1 ELSE 0 END) as outreach,
+          SUM(CASE WHEN d.category IS NULL THEN 1 ELSE 0 END) as uncategorized
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN drugs d ON oi.drug_id = d.id
+        WHERE o.user_id = $1
+          AND oi.status = 'approved'
+          AND o.transaction_type = 'institute'
       `,
         [userId]
       );
@@ -476,6 +514,7 @@ const getChartsData = async (req, res) => {
         categoryDistribution: {
           ipd: parseInt(categoryDistribution.ipd || 0),
           opd: parseInt(categoryDistribution.opd || 0),
+          iec: parseInt(categoryDistribution.iec || 0),
           outreach: parseInt(categoryDistribution.outreach || 0),
           uncategorized: parseInt(categoryDistribution.uncategorized || 0),
         },

@@ -202,7 +202,7 @@ const PharmacyOrderPage = () => {
 
     const invalidItems = cart.filter(
       (item) =>
-        !item.category || !['IPD', 'OPD', 'OUTREACH'].includes(item.category)
+        !item.category || !['IPD', 'OPD', 'IEC', 'OUTREACH'].includes(item.category)
     );
 
     if (invalidItems.length > 0) {
@@ -391,7 +391,18 @@ const PharmacyOrderPage = () => {
                       >
                         <FiMinus size={14} />
                       </button>
-                      <span className="mx-2">{item.quantity}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 1) {
+                            updateQuantity(index, value);
+                          }
+                        }}
+                        className="mx-2 w-16 text-center border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
                       <button
                         onClick={() => updateQuantity(index, item.quantity + 1)}
                         className="bg-gray-200 p-1 rounded"
@@ -413,6 +424,7 @@ const PharmacyOrderPage = () => {
                         <option value="">N/A</option>
                         <option value="IPD">IPD</option>
                         <option value="OPD">OPD</option>
+                        <option value="IEC">IEC</option>
                         <option value="OUTREACH">OUTREACH</option>
                       </select>
                     </div>

@@ -451,6 +451,53 @@ const deletePharmacyUser = async (req, res) => {
   }
 };
 
+// Get pharmacy inventory from approved indent items
+const getPharmacyInventory = async (req, res) => {
+  const db = req.app.locals.db;
+  const pharmacyId = req.user.id;
+
+  try {
+    // Get all approved order items where this pharmacy placed the order
+    // Aggregate by drug to show total available quantity
+    const query = `
+      SELECT
+        d.id as drug_id,
+        d.drug_type,
+        d.name,
+        d.description,
+        d.batch_no,
+        d.mfg_date,
+        d.exp_date,
+        d.price,
+        d.category,
+        COALESCE(SUM(oi.quantity), 0) as stock
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      JOIN drugs d ON oi.drug_id = d.id
+      WHERE o.user_id = $1
+        AND oi.status = 'approved'
+        AND o.transaction_type = 'institute'
+      GROUP BY d.id, d.drug_type, d.name, d.description, d.batch_no, d.mfg_date, d.exp_date, d.price, d.category
+      HAVING COALESCE(SUM(oi.quantity), 0) > 0
+      ORDER BY LOWER(d.name) ASC
+    `;
+
+    const result = await db.query(query, [pharmacyId]);
+
+    res.json({
+      status: true,
+      drugs: result.rows,
+    });
+  } catch (err) {
+    console.error('Error fetching pharmacy inventory:', err);
+    res.status(500).json({
+      status: false,
+      message: 'Server error while fetching pharmacy inventory',
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   createPharmacyUser,
   getPharmacyUsers,
@@ -458,5 +505,6 @@ module.exports = {
   updatePharmacyUser,
   deletePharmacyUser,
   linkDispensaryToInstitute,
-  getUnlinkedDispensaries
+  getUnlinkedDispensaries,
+  getPharmacyInventory
 };

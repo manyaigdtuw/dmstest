@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pharmacyOrderController = require('../controllers/pharmacyAdmin/pharmacyOrderController');
+const pharmacyController = require('../controllers/instituteAdmin/pharmacyController');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeRole = require('../middlewares/roleMiddleware');
 
@@ -25,6 +26,14 @@ router.get(
   verifyToken,
   authorizeRole('pharmacy', 'institute', 'admin'),
   pharmacyOrderController.getPharmacyOrderHistoryDetails
+);
+
+// Get pharmacy inventory (approved indent items)
+router.get(
+  '/inventory',
+  verifyToken,
+  authorizeRole('pharmacy'),
+  pharmacyController.getPharmacyInventory
 );
 
 

@@ -318,8 +318,9 @@ Vitamin B Complex,8,Outreach program`;
                         onChange={(e) => setCategory(e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="OPD">OPD</option>
                         <option value="IPD">IPD</option>
+                        <option value="OPD">OPD</option>
+                        <option value="IEC">IEC</option>
                         <option value="OUTREACH">OUTREACH</option>
                       </select>
                     </div>

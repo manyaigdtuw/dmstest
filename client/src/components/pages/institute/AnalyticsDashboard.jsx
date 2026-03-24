@@ -30,6 +30,7 @@ const AnalyticsDashboard = () => {
     totalDrugs: 0,
     ipdDrugs: 0,
     opdDrugs: 0,
+    iecDrugs: 0,
     outreachDrugs: 0,
     loading: true,
   });
@@ -131,22 +132,24 @@ const AnalyticsDashboard = () => {
 
   // Prepare chart data
   const drugDistributionData = {
-    labels: ['IPD', 'OPD', 'OUTREACH', 'Uncategorized'],
+    labels: ['IPD', 'OPD', 'IEC', 'OUTREACH', 'Uncategorized'],
     datasets: [
       {
         data: [
           chartsData.categoryDistribution?.ipd || 0,
           chartsData.categoryDistribution?.opd || 0,
+          chartsData.categoryDistribution?.iec || 0,
           chartsData.categoryDistribution?.outreach || 0,
           chartsData.categoryDistribution?.uncategorized || 0,
         ],
         backgroundColor: [
           '#3B82F6', // Blue
           '#10B981', // Green
+          '#14B8A6', // Teal
           '#F59E0B', // Yellow
           '#9CA3AF', // Gray
         ],
-        hoverBackgroundColor: ['#2563EB', '#059669', '#D97706', '#6B7280'],
+        hoverBackgroundColor: ['#2563EB', '#059669', '#0D9488', '#D97706', '#6B7280'],
       },
     ],
   };
@@ -251,6 +254,13 @@ const AnalyticsDashboard = () => {
                   value={stats.opdDrugs}
                   loading={stats.loading}
                   color="green"
+                />
+                <StatCard
+                  icon={<FaClinicMedical className="w-6 h-6" />}
+                  title="IEC Drugs"
+                  value={stats.iecDrugs}
+                  loading={stats.loading}
+                  color="teal"
                 />
                 <StatCard
                   icon={<FaGlobeAmericas className="w-6 h-6" />}
@@ -632,6 +642,11 @@ const StatCard = ({ icon, title, value, loading, color }) => {
       bg: 'bg-green-50',
       text: 'text-green-600',
       iconBg: 'bg-green-100',
+    },
+    teal: {
+      bg: 'bg-teal-50',
+      text: 'text-teal-600',
+      iconBg: 'bg-teal-100',
     },
     purple: {
       bg: 'bg-purple-50',

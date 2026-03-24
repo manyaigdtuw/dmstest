@@ -1,0 +1,21 @@
+Drug Type,Name,Batch No,Description,Stock,Manufacturing Date,Expiration Date,Price,Category
+Antibiotics,Amoxicillin 500mg,BATCH001,Antibiotic for bacterial infections,500,01-01-2024,01-01-2026,125.50,IPD
+Antibiotics,Azithromycin 250mg,BATCH002,Macrolide antibiotic,300,15-02-2024,15-02-2026,180.00,OPD
+Analgesics,Paracetamol 500mg,BATCH003,Pain reliever and fever reducer,1000,10-03-2024,10-03-2027,45.00,OPD
+Analgesics,Ibuprofen 400mg,BATCH004,Anti-inflammatory pain reliever,800,20-04-2024,20-04-2027,65.00,IPD
+Antihistamines,Cetirizine 10mg,BATCH005,Allergy relief medication,600,05-05-2024,05-05-2026,85.00,OPD
+Antihistamines,Loratadine 10mg,BATCH006,Non-drowsy antihistamine,450,12-06-2024,12-06-2026,95.00,OUTREACH
+Antacids,Omeprazole 20mg,BATCH007,Proton pump inhibitor,700,18-07-2024,18-07-2026,120.00,IPD
+Antacids,Ranitidine 150mg,BATCH008,H2 receptor antagonist,550,25-08-2024,25-08-2026,75.00,OPD
+Vitamins,Vitamin D3 60k IU,BATCH009,Vitamin D supplement,400,01-09-2024,01-09-2027,150.00,OUTREACH
+Vitamins,Vitamin B12 1500mcg,BATCH010,Vitamin B12 supplement,350,10-10-2024,10-10-2027,110.00,OPD
+Cardiovascular,Amlodipine 5mg,BATCH011,Calcium channel blocker,500,15-11-2024,15-11-2026,90.00,IPD
+Cardiovascular,Atorvastatin 10mg,BATCH012,Statin for cholesterol,450,20-12-2024,20-12-2026,145.00,IPD
+Diabetes,Metformin 500mg,BATCH013,Oral hypoglycemic agent,600,05-01-2025,05-01-2027,85.00,IPD
+Diabetes,Glimepiride 2mg,BATCH014,Sulfonylurea for diabetes,400,10-02-2025,10-02-2027,130.00,IPD
+Respiratory,Salbutamol Inhaler,BATCH015,Bronchodilator inhaler,300,15-03-2025,15-03-2026,250.00,OPD
+Respiratory,Budesonide Inhaler,BATCH016,Corticosteroid inhaler,250,20-04-2025,20-04-2026,320.00,IPD
+Gastrointestinal,Domperidone 10mg,BATCH017,Antiemetic medication,500,25-05-2025,25-05-2027,55.00,OPD
+Gastrointestinal,Ondansetron 4mg,BATCH018,Anti-nausea medication,400,01-06-2025,01-06-2027,180.00,IPD
+Antifungals,Fluconazole 150mg,BATCH019,Antifungal medication,300,10-07-2025,10-07-2027,200.00,OPD
+Antifungals,Clotrimazole Cream,BATCH020,Topical antifungal,350,15-08-2025,15-08-2027,95.00,OUTREACH

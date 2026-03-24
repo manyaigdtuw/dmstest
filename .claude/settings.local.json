@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.\"\"C:UsersmanyaDownloadsdms_newDMSclientsrccomponentspagespharmacyAnalyticsDashboard.jsx\"\"\" | grep -A10 \"setStats \")",
+      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js\")",
+      "Bash(.\\\\\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js\\\\\"\")",
+      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js\"\")",
+      "Bash(.'C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js')",
+      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\client\\\\src\\\\components\\\\pages\\\\admin\\\\AnalyticsDashboard.jsx\"\")",
+      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\client\\\\src\\\\components\\\\pages\\\\institute\\\\AnalyticsDashboard.jsx\"\")"
+    ]
+  }
+}
