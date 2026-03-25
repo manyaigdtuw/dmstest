@@ -20,3 +20,12 @@ ALTER TABLE daily_dispensing_summary DROP CONSTRAINT IF EXISTS daily_dispensing_
 
 ALTER TABLE daily_dispensing_summary ADD CONSTRAINT daily_dispensing_summary_category_check
     CHECK (category IN ('IPD', 'OPD', 'IEC', 'OUTREACH', NULL));
+
+
+-- Add batch_no column to daily_dispensing_summary table
+ALTER TABLE daily_dispensing_summary 
+ADD COLUMN IF NOT EXISTS batch_no VARCHAR(100);
+
+-- Create an index for better performance
+CREATE INDEX IF NOT EXISTS idx_daily_dispensing_batch_no 
+ON daily_dispensing_summary(batch_no);

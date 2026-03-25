@@ -8,7 +8,8 @@ const recordDailyDispensing = async (req, res) => {
     quantity_dispensed,
     dispensing_date,
     category,
-    notes
+    notes,
+    batch_no
   } = req.body;
 
   try {
@@ -24,44 +25,84 @@ const recordDailyDispensing = async (req, res) => {
 
     await db.query('BEGIN');
 
-    let drugCheck;
+    // Get current stock based on user role
+    let currentStock;
+    let drugDetails;
+
     if (userRole === 'pharmacy') {
-      drugCheck = await db.query(`
-        SELECT d.id, d.name, COALESCE(SUM(oi.quantity), 0) as stock
-        FROM drugs d
-        JOIN order_items oi ON oi.drug_id = d.id
-        JOIN orders o ON oi.order_id = o.id
-        WHERE d.id = $1
-          AND o.user_id = $2
-          AND oi.status = 'approved'
-          AND o.transaction_type = 'institute'
-        GROUP BY d.id, d.name
+      // For pharmacy: calculate stock from approved orders minus already dispensed
+      const stockResult = await db.query(`
+        WITH approved_inventory AS (
+          SELECT
+            d.id,
+            d.name,
+            d.batch_no,
+            COALESCE(SUM(oi.quantity), 0) as approved_quantity
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          JOIN drugs d ON oi.drug_id = d.id
+          WHERE oi.drug_id = $1
+            AND o.user_id = $2
+            AND oi.status = 'approved'
+            AND o.transaction_type = 'institute'
+          GROUP BY d.id, d.name, d.batch_no
+        ),
+        dispensed_total AS (
+          SELECT
+            COALESCE(SUM(quantity_dispensed), 0) as total_dispensed
+          FROM daily_dispensing_summary
+          WHERE drug_id = $1
+        )
+        SELECT
+          ai.id,
+          ai.name,
+          ai.batch_no,
+          ai.approved_quantity,
+          GREATEST(ai.approved_quantity - COALESCE(dt.total_dispensed, 0), 0) as current_stock
+        FROM approved_inventory ai
+        CROSS JOIN dispensed_total dt
       `, [drug_id, userId]);
+
+      if (stockResult.rows.length === 0) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({
+          status: false,
+          message: 'Drug not found in pharmacy inventory'
+        });
+      }
+
+      drugDetails = stockResult.rows[0];
+      currentStock = parseInt(drugDetails.current_stock);
     } else {
-      drugCheck = await db.query(
-        'SELECT id, name, stock FROM drugs WHERE id = $1 AND created_by = $2',
+      // For institutes: get stock from drugs table
+      const drugResult = await db.query(
+        'SELECT id, name, stock, batch_no FROM drugs WHERE id = $1 AND created_by = $2',
         [drug_id, userId]
       );
+
+      if (drugResult.rows.length === 0) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({
+          status: false,
+          message: 'Drug not found in your inventory'
+        });
+      }
+
+      drugDetails = drugResult.rows[0];
+      currentStock = parseInt(drugDetails.stock);
     }
 
-    if (drugCheck.rows.length === 0) {
-      await db.query('ROLLBACK');
-      return res.status(404).json({
-        status: false,
-        message: 'Drug not found in your inventory'
-      });
-    }
-
-    const drug = drugCheck.rows[0];
-
-    if (parseInt(drug.stock) < parseInt(quantity_dispensed)) {
+    // Validate stock
+    const quantity = parseInt(quantity_dispensed);
+    if (currentStock < quantity) {
       await db.query('ROLLBACK');
       return res.status(400).json({
         status: false,
-        message: `Insufficient stock. Available: ${drug.stock}, Trying to dispense: ${quantity_dispensed}`
+        message: `Insufficient stock. Available: ${currentStock}, Trying to dispense: ${quantity}`
       });
     }
 
+    // Check for existing record
     const existingRecord = await db.query(
       `SELECT id, quantity_dispensed FROM daily_dispensing_summary
        WHERE drug_id = $1 AND dispensing_date = $2 AND category = $3`,
@@ -71,61 +112,83 @@ const recordDailyDispensing = async (req, res) => {
     let result;
     if (existingRecord.rows.length > 0) {
       const existing = existingRecord.rows[0];
-      const quantityDifference = quantity_dispensed - existing.quantity_dispensed;
+      const quantityDifference = quantity - existing.quantity_dispensed;
 
-      if (parseInt(drug.stock) < quantityDifference) {
-        await db.query('ROLLBACK');
-        return res.status(400).json({
-          status: false,
-          message: `Insufficient stock for update. Available: ${drug.stock}, Additional needed: ${quantityDifference}`
-        });
+      // For institutes only: check stock difference
+      if (userRole !== 'pharmacy' && quantityDifference > 0) {
+        if (currentStock < quantityDifference) {
+          await db.query('ROLLBACK');
+          return res.status(400).json({
+            status: false,
+            message: `Insufficient stock for update. Available: ${currentStock}, Additional needed: ${quantityDifference}`
+          });
+        }
       }
 
+      // Update existing record
       result = await db.query(
         `UPDATE daily_dispensing_summary
-         SET quantity_dispensed = $1, notes = $2, updated_at = NOW()
-         WHERE id = $3
+         SET quantity_dispensed = $1, notes = $2, batch_no = $3, updated_at = NOW()
+         WHERE id = $4
          RETURNING *`,
-        [quantity_dispensed, notes, existing.id]
+        [quantity, notes, batch_no || drugDetails.batch_no, existing.id]
       );
 
-      if (userRole !== 'pharmacy') {
+      // Update stock for institutes only (pharmacy stock is calculated dynamically)
+      if (userRole !== 'pharmacy' && quantityDifference !== 0) {
         await db.query(
           'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
           [quantityDifference, drug_id]
         );
       }
     } else {
+      // Insert new record
       result = await db.query(
         `INSERT INTO daily_dispensing_summary
-         (drug_id, quantity_dispensed, dispensing_date, category, notes, recorded_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
+         (drug_id, quantity_dispensed, dispensing_date, category, notes, batch_no, recorded_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [drug_id, quantity_dispensed, currentDate, category || 'OPD', notes, userId]
+        [drug_id, quantity, currentDate, category || 'OPD', notes, batch_no || drugDetails.batch_no, userId]
       );
 
+      // Update stock for institutes only
       if (userRole !== 'pharmacy') {
         await db.query(
           'UPDATE drugs SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
-          [quantity_dispensed, drug_id]
+          [quantity, drug_id]
         );
       }
     }
 
     await db.query('COMMIT');
 
+    // Calculate updated stock for response
     let updatedStock;
     if (userRole === 'pharmacy') {
       const stockResult = await db.query(`
-        SELECT COALESCE(SUM(oi.quantity), 0) as stock
-        FROM order_items oi
-        JOIN orders o ON oi.order_id = o.id
-        WHERE oi.drug_id = $1
-          AND o.user_id = $2
-          AND oi.status = 'approved'
-          AND o.transaction_type = 'institute'
+        WITH approved_inventory AS (
+          SELECT COALESCE(SUM(oi.quantity), 0) as approved_quantity
+          FROM order_items oi
+          JOIN orders o ON oi.order_id = o.id
+          WHERE oi.drug_id = $1
+            AND o.user_id = $2
+            AND oi.status = 'approved'
+            AND o.transaction_type = 'institute'
+        ),
+        dispensed_total AS (
+          SELECT COALESCE(SUM(quantity_dispensed), 0) as total_dispensed
+          FROM daily_dispensing_summary
+          WHERE drug_id = $1
+        )
+        SELECT 
+          GREATEST(
+            (SELECT approved_quantity FROM approved_inventory) - 
+            (SELECT total_dispensed FROM dispensed_total), 
+            0
+          ) as current_stock
       `, [drug_id, userId]);
-      updatedStock = stockResult.rows[0]?.stock || 0;
+
+      updatedStock = stockResult.rows[0]?.current_stock || 0;
     } else {
       const stockResult = await db.query(
         'SELECT stock FROM drugs WHERE id = $1',
@@ -342,28 +405,41 @@ const getDailyDispensing = async (req, res) => {
       const offsetIdx = category && category !== 'all' ? '$5' : '$4';
 
       result = await db.query(`
-        SELECT
-          dds.*,
-          d.name as drug_name,
-          d.batch_no,
-          COALESCE(inv.total_quantity, 0) as current_stock,
-          u.name as recorded_by_name
-        FROM daily_dispensing_summary dds
-        JOIN drugs d ON dds.drug_id = d.id
-        JOIN users u ON dds.recorded_by = u.id
-        JOIN (
-          SELECT d.id, SUM(oi.quantity) as total_quantity
+        WITH approved_inventory AS (
+          SELECT
+            d.id,
+            d.name,
+            d.batch_no,
+            COALESCE(SUM(oi.quantity), 0) as approved_quantity
           FROM order_items oi
           JOIN orders o ON oi.order_id = o.id
           JOIN drugs d ON oi.drug_id = d.id
           WHERE o.user_id = $1
             AND oi.status = 'approved'
             AND o.transaction_type = 'institute'
-          GROUP BY d.id
-        ) inv ON dds.drug_id = inv.id
+          GROUP BY d.id, d.name, d.batch_no
+        ),
+        dispensed_total AS (
+          SELECT
+            drug_id,
+            COALESCE(SUM(quantity_dispensed), 0) as total_dispensed
+          FROM daily_dispensing_summary
+          WHERE dispensing_date <= $2
+          GROUP BY drug_id
+        )
+        SELECT
+          dds.*,
+          ai.name as drug_name,
+          ai.batch_no,
+          GREATEST(ai.approved_quantity - COALESCE(dt.total_dispensed, 0), 0) as current_stock,
+          u.name as recorded_by_name
+        FROM daily_dispensing_summary dds
+        JOIN approved_inventory ai ON dds.drug_id = ai.id
+        JOIN users u ON dds.recorded_by = u.id
+        LEFT JOIN dispensed_total dt ON dds.drug_id = dt.drug_id
         WHERE dds.dispensing_date = $2
           ${categoryFilter}
-        ORDER BY d.name
+        ORDER BY ai.name
         LIMIT ${limitIdx} OFFSET ${offsetIdx}
       `, params);
 
@@ -449,28 +525,41 @@ const getTodayDispensing = async (req, res) => {
     let result;
 
     if (userRole === 'pharmacy') {
+      // For pharmacy users, calculate remaining stock by subtracting total dispensed from approved quantity
       result = await db.query(`
-        SELECT
-          dds.*,
-          d.name as drug_name,
-          d.batch_no,
-          COALESCE(inv.total_quantity, 0) as current_stock,
-          u.name as recorded_by_name
-        FROM daily_dispensing_summary dds
-        JOIN drugs d ON dds.drug_id = d.id
-        JOIN users u ON dds.recorded_by = u.id
-        JOIN (
-          SELECT d.id, SUM(oi.quantity) as total_quantity
+        WITH approved_inventory AS (
+          SELECT
+            d.id,
+            d.name,
+            d.batch_no,
+            COALESCE(SUM(oi.quantity), 0) as approved_quantity
           FROM order_items oi
           JOIN orders o ON oi.order_id = o.id
           JOIN drugs d ON oi.drug_id = d.id
           WHERE o.user_id = $1
             AND oi.status = 'approved'
             AND o.transaction_type = 'institute'
-          GROUP BY d.id
-        ) inv ON dds.drug_id = inv.id
+          GROUP BY d.id, d.name, d.batch_no
+        ),
+        dispensed_total AS (
+          SELECT
+            drug_id,
+            COALESCE(SUM(quantity_dispensed), 0) as total_dispensed
+          FROM daily_dispensing_summary
+          GROUP BY drug_id
+        )
+        SELECT
+          dds.*,
+          ai.name as drug_name,
+          ai.batch_no,
+          GREATEST(ai.approved_quantity - COALESCE(dt.total_dispensed, 0), 0) as current_stock,
+          u.name as recorded_by_name
+        FROM daily_dispensing_summary dds
+        JOIN approved_inventory ai ON dds.drug_id = ai.id
+        JOIN users u ON dds.recorded_by = u.id
+        LEFT JOIN dispensed_total dt ON dds.drug_id = dt.drug_id
         WHERE dds.dispensing_date = CURRENT_DATE
-        ORDER BY d.name
+        ORDER BY ai.name
       `, [userId]);
     } else {
       result = await db.query(`
@@ -583,23 +672,23 @@ const deleteDispensingRecord = async (req, res) => {
   try {
     await db.query('BEGIN');
 
+    // Get the record to delete
     let recordResult;
     if (userRole === 'pharmacy') {
       recordResult = await db.query(`
         SELECT dds.quantity_dispensed, dds.drug_id
         FROM daily_dispensing_summary dds
-        JOIN (
-          SELECT d.id
+        WHERE dds.id = $1
+        AND EXISTS (
+          SELECT 1 
           FROM order_items oi
           JOIN orders o ON oi.order_id = o.id
-          JOIN drugs d ON oi.drug_id = d.id
-          WHERE o.user_id = $1
+          WHERE oi.drug_id = dds.drug_id
+            AND o.user_id = $2
             AND oi.status = 'approved'
             AND o.transaction_type = 'institute'
-          GROUP BY d.id
-        ) inv ON dds.drug_id = inv.id
-        WHERE dds.id = $2
-      `, [userId, id]);
+        )
+      `, [id, userId]);
     } else {
       recordResult = await db.query(`
         SELECT dds.quantity_dispensed, dds.drug_id
@@ -619,6 +708,7 @@ const deleteDispensingRecord = async (req, res) => {
 
     const record = recordResult.rows[0];
 
+    // Only restore stock for institutes (pharmacy stock is calculated dynamically)
     if (userRole !== 'pharmacy') {
       await db.query(
         'UPDATE drugs SET stock = stock + $1, updated_at = NOW() WHERE id = $2',

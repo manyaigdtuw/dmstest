@@ -7,7 +7,11 @@
       "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js\"\")",
       "Bash(.'C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\server\\\\controllers\\\\analyticsController.js')",
       "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\client\\\\src\\\\components\\\\pages\\\\admin\\\\AnalyticsDashboard.jsx\"\")",
-      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\client\\\\src\\\\components\\\\pages\\\\institute\\\\AnalyticsDashboard.jsx\"\")"
+      "Bash(.\"C:\\\\Users\\\\manya\\\\Downloads\\\\dms_new\\\\DMS\\\\client\\\\src\\\\components\\\\pages\\\\institute\\\\AnalyticsDashboard.jsx\"\")",
+      "Bash(xargs grep:*)",
+      "Bash(curl -s -H \"Authorization: Bearer YOUR_TOKEN\" http://localhost:3000/api/pharmacy/inventory)",
+      "Bash(curl -s http://localhost:3000/api/pharmacy/inventory)",
+      "Bash(node:*)"
     ]
   }
 }

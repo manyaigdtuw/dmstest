@@ -459,6 +459,7 @@ const getPharmacyInventory = async (req, res) => {
   try {
     // Get all approved order items where this pharmacy placed the order
     // Aggregate by drug to show total available quantity
+    // Subtract total dispensed quantity to get remaining stock
     const query = `
       SELECT
         d.id as drug_id,
@@ -470,15 +471,20 @@ const getPharmacyInventory = async (req, res) => {
         d.exp_date,
         d.price,
         d.category,
-        COALESCE(SUM(oi.quantity), 0) as stock
+        GREATEST(COALESCE(SUM(oi.quantity), 0) - COALESCE(disp.total_dispensed, 0), 0) as stock
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN drugs d ON oi.drug_id = d.id
+      LEFT JOIN (
+        SELECT drug_id, SUM(quantity_dispensed) as total_dispensed
+        FROM daily_dispensing_summary
+        GROUP BY drug_id
+      ) disp ON d.id = disp.drug_id
       WHERE o.user_id = $1
         AND oi.status = 'approved'
         AND o.transaction_type = 'institute'
-      GROUP BY d.id, d.drug_type, d.name, d.description, d.batch_no, d.mfg_date, d.exp_date, d.price, d.category
-      HAVING COALESCE(SUM(oi.quantity), 0) > 0
+      GROUP BY d.id, d.drug_type, d.name, d.description, d.batch_no, d.mfg_date, d.exp_date, d.price, d.category, disp.total_dispensed
+      HAVING GREATEST(COALESCE(SUM(oi.quantity), 0) - COALESCE(disp.total_dispensed, 0), 0) > 0
       ORDER BY LOWER(d.name) ASC
     `;
 

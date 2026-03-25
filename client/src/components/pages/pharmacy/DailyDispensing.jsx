@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { FaSyringe, FaPills, FaUndo, FaFileImport } from 'react-icons/fa';
 import { FiPlus, FiCalendar, FiTrash2, FiDownload, FiEye } from 'react-icons/fi';
 import api from '../../../api/api';
+import UserContext from '../../../context/UserContext';
 
 const DailyDispensing = () => {
+  const { user } = useContext(UserContext);
   const [drugs, setDrugs] = useState([]);
   const [todayRecords, setTodayRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -14,18 +16,55 @@ const DailyDispensing = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [viewMode, setViewMode] = useState('today'); // 'today' or 'history'
   
-  const [dispensingForm, setDispensingForm] = useState({
-    drug_id: '',
-    quantity_dispensed: 1,
-    notes: ''
-  });
+  const [dispensingForms, setDispensingForms] = useState([
+    {
+      drug_id: '',
+      quantity_dispensed: 1,
+      notes: '',
+      batch_no: ''
+    }
+  ]);
 
   const isCurrentDate = selectedDate === new Date().toISOString().split('T')[0];
 
-  // Fetch drugs
+  const addDrugForm = () => {
+    setDispensingForms([...dispensingForms, {
+      drug_id: '',
+      quantity_dispensed: 1,
+      notes: '',
+      batch_no: ''
+    }]);
+  };
+
+  const removeDrugForm = (index) => {
+    if (dispensingForms.length > 1) {
+      setDispensingForms(dispensingForms.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateDrugForm = (index, field, value) => {
+    const updated = [...dispensingForms];
+    updated[index][field] = value;
+
+    // Auto-fill batch_no when drug is selected
+    if (field === 'drug_id' && value) {
+      const selectedDrug = drugs.find(d => d.id === value);
+      if (selectedDrug) {
+        updated[index].batch_no = selectedDrug.batch_no;
+      }
+    }
+
+    setDispensingForms(updated);
+  };
+
+  // Fetch drugs based on user role
   useEffect(() => {
-    fetchDrugs();
-  }, []);
+    if (user?.role === 'pharmacy') {
+      fetchPharmacyInventory();
+    } else {
+      fetchDrugs();
+    }
+  }, [user?.role]);
 
   // Fetch records based on view mode
   useEffect(() => {
@@ -35,6 +74,22 @@ const DailyDispensing = () => {
       fetchHistoryDispensing();
     }
   }, [selectedDate, category, viewMode]);
+
+  const fetchPharmacyInventory = async () => {
+    try {
+      const response = await api.get('/pharmacy/inventory');
+      if (response.data.drugs) {
+        // Map drug_id to id for consistency with regular drug endpoint
+        const mappedDrugs = response.data.drugs.map(drug => ({
+          ...drug,
+          id: drug.drug_id
+        }));
+        setDrugs(mappedDrugs);
+      }
+    } catch (error) {
+      console.error('Error fetching pharmacy inventory:', error);
+    }
+  };
 
   const fetchDrugs = async () => {
     try {
@@ -77,8 +132,11 @@ const DailyDispensing = () => {
 
   const handleRecordDispensing = async (e) => {
     e.preventDefault();
-    if (!dispensingForm.drug_id) {
-      alert('Please select a drug');
+
+    // Validate all forms
+    const invalidForms = dispensingForms.filter(form => !form.drug_id || form.quantity_dispensed <= 0);
+    if (invalidForms.length > 0) {
+      alert('Please select a drug and enter valid quantity for all entries');
       return;
     }
 
@@ -88,26 +146,58 @@ const DailyDispensing = () => {
     }
 
     setIsLoading(true);
+
     try {
-      await api.post('/daily-dispensing', {
-        ...dispensingForm,
-        category,
-        dispensing_date: selectedDate
-      });
-      
-      // Reset form and refresh data
-      setDispensingForm({
+      // Process each drug dispensing
+      const results = [];
+      const errors = [];
+
+      for (const form of dispensingForms) {
+        try {
+          const response = await api.post('/daily-dispensing', {
+            ...form,
+            category,
+            dispensing_date: selectedDate
+          });
+          results.push(response.data);
+        } catch (error) {
+          errors.push({
+            drug: drugs.find(d => d.id === form.drug_id)?.name,
+            error: error.response?.data?.message || 'Failed to record dispensing'
+          });
+        }
+      }
+
+      // Show results
+      if (errors.length > 0) {
+        const errorMessage = errors.map(e => `${e.drug}: ${e.error}`).join('\n');
+        alert(`Some drugs failed to dispense:\n${errorMessage}`);
+      } else {
+        alert(`Successfully recorded dispensing for ${results.length} drugs!`);
+      }
+
+      // Reset forms and refresh data
+      setDispensingForms([{
         drug_id: '',
         quantity_dispensed: 1,
-        notes: ''
-      });
-      fetchTodayDispensing();
-      fetchDrugs(); // Refresh to get updated stock
-      
-      alert('Dispensing recorded successfully!');
+        notes: '',
+        batch_no: ''
+      }]);
+
+      if (viewMode === 'today') {
+        fetchTodayDispensing();
+      }
+
+      // Refresh inventory based on role
+      if (user?.role === 'pharmacy') {
+        fetchPharmacyInventory();
+      } else {
+        fetchDrugs();
+      }
+
     } catch (error) {
       console.error('Error recording dispensing:', error);
-      alert(error.response?.data?.message || 'Failed to record dispensing');
+      alert('An unexpected error occurred while recording dispensing');
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +216,14 @@ const DailyDispensing = () => {
     try {
       await api.delete(`/daily-dispensing/${recordId}`);
       fetchTodayDispensing();
-      fetchDrugs(); // Refresh to get updated stock
+
+      // Refresh inventory based on role
+      if (user?.role === 'pharmacy') {
+        fetchPharmacyInventory();
+      } else {
+        fetchDrugs();
+      }
+
       alert('Record deleted successfully!');
     } catch (error) {
       console.error('Error deleting record:', error);
@@ -167,7 +264,13 @@ const DailyDispensing = () => {
         setShowImportModal(false);
         setImportFile(null);
         fetchTodayDispensing();
-        fetchDrugs(); // Refresh to get updated stock
+
+        // Refresh inventory based on role
+        if (user?.role === 'pharmacy') {
+          fetchPharmacyInventory();
+        } else {
+          fetchDrugs();
+        }
       } else {
         throw new Error(response.data.message || 'Import failed');
       }
@@ -325,72 +428,98 @@ Vitamin B Complex,8,Outreach program`;
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Select Drug
-                      </label>
-                      <select
-                        value={dispensingForm.drug_id}
-                        onChange={(e) => setDispensingForm(prev => ({
-                          ...prev,
-                          drug_id: e.target.value
-                        }))}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="">Choose a drug...</option>
-                        {drugs.map(drug => (
-                          <option key={drug.id} value={drug.id}>
-                            {drug.name} (Stock: {drug.stock}, Batch: {drug.batch_no})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Multi-drug dispensing forms */}
+                    {dispensingForms.map((form, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-sm font-medium text-gray-700">Drug {index + 1}</h4>
+                          {dispensingForms.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeDrugForm(index)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <FiTrash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quantity Dispensed
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={dispensingForm.quantity_dispensed}
-                        onChange={(e) => setDispensingForm(prev => ({
-                          ...prev,
-                          quantity_dispensed: parseInt(e.target.value) || 1
-                        }))}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
+                        <div className="space-y-3">
+                          {/* Drug selection */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Select Drug
+                            </label>
+                            <select
+                              value={form.drug_id}
+                              onChange={(e) => updateDrugForm(index, 'drug_id', Number(e.target.value))}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                              required
+                            >
+                              <option value="">Choose a drug...</option>
+                              {drugs.map(drug => (
+                                <option key={drug.id} value={drug.id}>
+                                  {drug.name} (Stock: {drug.stock}, Batch: {drug.batch_no})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes (Optional)
-                      </label>
-                      <textarea
-                        value={dispensingForm.notes}
-                        onChange={(e) => setDispensingForm(prev => ({
-                          ...prev,
-                          notes: e.target.value
-                        }))}
-                        rows="2"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+                          {/* Quantity */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Quantity Dispensed
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={form.drug_id ? drugs.find(d => d.id === form.drug_id)?.stock : undefined}
+                              value={form.quantity_dispensed}
+                              onChange={(e) => updateDrugForm(index, 'quantity_dispensed', parseInt(e.target.value) || 1)}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                              required
+                            />
+                          </div>
 
-                    {dispensingForm.drug_id && (
-                      <div className="bg-blue-50 p-3 rounded-md">
-                        <div className="text-sm text-blue-700">
-                          Current Stock: <strong>{getDrugStock(dispensingForm.drug_id)}</strong><br />
-                          After Dispensing: <strong>{getDrugStock(dispensingForm.drug_id) - dispensingForm.quantity_dispensed}</strong>
+                          {/* Notes */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Notes (Optional)
+                            </label>
+                            <textarea
+                              value={form.notes}
+                              onChange={(e) => updateDrugForm(index, 'notes', e.target.value)}
+                              rows="2"
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+
+                          {/* Stock info */}
+                          {form.drug_id && (
+                            <div className="bg-blue-50 p-3 rounded-md">
+                              <div className="text-sm text-blue-700">
+                                Available Stock: <strong>{drugs.find(d => d.id === form.drug_id)?.stock || 0}</strong><br />
+                                After Dispensing: <strong>{(drugs.find(d => d.id === form.drug_id)?.stock || 0) - form.quantity_dispensed}</strong>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
+                    ))}
+
+                    {/* Add more drugs button */}
+                    <button
+                      type="button"
+                      onClick={addDrugForm}
+                      className="w-full border-2 border-dashed border-gray-300 rounded-md py-2 text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                    >
+                      <FiPlus className="inline mr-2" />
+                      Add Another Drug
+                    </button>
 
                     <button
                       type="submit"
-                      disabled={isLoading || !dispensingForm.drug_id}
+                      disabled={isLoading || dispensingForms.some(form => !form.drug_id)}
                       className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? 'Recording...' : 'Record Dispensing'}
