@@ -36,8 +36,6 @@ app.use(morgan('dev', {
 app.set('trust proxy', true); // Trust first proxy
 app.use(express.json());
 
-// CORS configuration - disabled when behind a reverse proxy that handles CORS
-// If you need CORS enabled locally, set ENABLE_CORS=true in .env
 if (process.env.ENABLE_CORS === 'true' || !process.env.NODE_ENV) {
   const corsOptions = {
     origin: process.env.CLIENT_URL || 'http://localhost:8005',

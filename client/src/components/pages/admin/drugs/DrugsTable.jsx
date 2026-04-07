@@ -149,85 +149,29 @@ const DrugsTable = () => {
   const [importErrors, setImportErrors] = useState([]);
 
   // Sample CSV download function
-  const downloadSampleCSV = () => {
-    // Sample CSV data with headers and example rows
-    const csvData = [
-      [
-        'Drug Type',
-        'Name', 
-        'Batch No',
-        'Description',
-        'Stock',
-        'Manufacturing Date',
-        'Expiration Date',
-        'Price',
-        'Category'
-      ],
-      [
-        'Tablet',
-        'Paracetamol',
-        'BATCH001',
-        'Pain reliever and fever reducer',
-        '100',
-        '15-01-2024',
-        '15-01-2026',
-        '25.50',
-        'OPD'
-      ],
-      [
-        'Syrup',
-        'Cough Syrup',
-        'BATCH002',
-        'For cough and cold relief',
-        '50',
-        '20-02-2024',
-        '20-02-2025',
-        '120.00',
-        'IPD'
-      ],
-      [
-        'Capsule',
-        'Amoxicillin',
-        'BATCH003',
-        'Antibiotic medication',
-        '75',
-        '10-03-2024',
-        '10-03-2026',
-        '85.75',
-        'OUTREACH'
-      ],
-      [
-        'Injection',
-        'Vitamin B12',
-        'BATCH004',
-        'Vitamin supplement injection',
-        '30',
-        '05-04-2024',
-        '05-04-2025',
-        '45.25',
-        'IPD'
-      ]
-    ];
+  const downloadSampleCSV = async () => {
+    try {
+      // Download the Final_medslist.csv template using API
+      const response = await api.get('/drugs/download-template', {
+        responseType: 'blob' // Important for file downloads
+      });
 
-    // Convert to CSV string
-    const csvString = csvData.map(row => 
-      row.map(field => `"${field}"`).join(',')
-    ).join('\n');
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Final_medslist.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-    // Create and download file
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'drugs_import_sample.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.info('Sample CSV downloaded successfully!');
+      toast.success('Final_medslist.csv downloaded! Fill in the details and upload.');
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      toast.error('Failed to download template. Please try again.');
+    }
   };
 
   // Fetch drug types from database
@@ -621,11 +565,12 @@ const DrugsTable = () => {
       if (response.data.errors && response.data.errors.length > 0) {
         setImportErrors(response.data.errors);
         toast.warning(
-          `Import completed with ${response.data.successCount} successes and ${response.data.errors.length} errors`
+          `Import completed with ${response.data.summary.added} added, ${response.data.summary.updated} updated, and ${response.data.errors.length} errors. ${response.data.summary.skipped} blank rows were skipped.`
         );
       } else {
+        const summary = response.data.summary;
         toast.success(
-          `Successfully imported drugs`
+          `Import completed! ${summary.added} drugs added, ${summary.updated} updated. ${summary.skipped} blank rows were skipped.`
         );
         fetchDrugs(); // Refresh the drug list
         setShowImportModal(false);

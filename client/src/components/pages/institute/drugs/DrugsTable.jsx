@@ -12,6 +12,7 @@ import {
   FiXCircle,
   FiUpload,
   FiClock,
+  FiDownload,
 } from 'react-icons/fi';
 import { FaPills, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../../../../api/api';
@@ -387,6 +388,31 @@ const DrugsTable = () => {
     }
   };
 
+  const downloadSampleCSV = async () => {
+    try {
+      // Download the Final_medslist.csv template using API
+      const response = await api.get('/drugs/download-template', {
+        responseType: 'blob' // Important for file downloads
+      });
+
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Final_medslist.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Final_medslist.csv downloaded! Fill in the details and upload.');
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      toast.error('Failed to download template. Please try again.');
+    }
+  };
+
   const handleImportClick = () => {
     setShowImportModal(true);
     setImportFile(null);
@@ -433,11 +459,12 @@ const DrugsTable = () => {
       if (response.data.errors && response.data.errors.length > 0) {
         setImportErrors(response.data.errors);
         toast.warning(
-          `Import completed with ${response.data.successCount} successes and ${response.data.errors.length} errors`
+          `Import completed with ${response.data.summary.added} added, ${response.data.summary.updated} updated, and ${response.data.errors.length} errors. ${response.data.summary.skipped} blank rows were skipped.`
         );
       } else {
+        const summary = response.data.summary;
         toast.success(
-          `Successfully imported ${response.data.successCount} drugs`
+          `Import completed! ${summary.added} drugs added, ${summary.updated} updated. ${summary.skipped} blank rows were skipped.`
         );
         fetchDrugs(); // Refresh the drug list
         setShowImportModal(false);
@@ -496,6 +523,13 @@ const DrugsTable = () => {
             Drugs Inventory
           </h2>
           <div className="flex gap-2">
+            <button
+              onClick={downloadSampleCSV}
+              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
+            >
+              <FiDownload className="mr-2" />
+              Sample CSV
+            </button>
             <button
               onClick={handleImportClick}
               className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
@@ -1224,9 +1258,19 @@ const DrugsTable = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select CSV File
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Select CSV File
+                  </label>
+                  <button
+                    type="button"
+                    onClick={downloadSampleCSV}
+                    className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    <FiDownload className="mr-1 h-4 w-4" />
+                    Download Final_medslist.csv
+                  </button>
+                </div>
                 <input
                   type="file"
                   accept=".csv"
@@ -1239,9 +1283,7 @@ const DrugsTable = () => {
             hover:file:bg-blue-100"
                 />
                 <p className="mt-1 text-sm text-gray-500">
-                  CSV should include columns: Drug Type, Name, Batch No,
-                  Description, Stock, Manufacturing Date (DD-MM-YYYY), Expiration Date (DD-MM-YYYY),
-                  Price, Category
+                  Please use the Final_medslist.csv template. First two columns (Drug Type and Name) should not be changed.
                 </p>
               </div>
 

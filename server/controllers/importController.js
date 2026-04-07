@@ -4,7 +4,7 @@ const path = require('path');
 
 const importDrugs = async (req, res) => {
   console.log('=== DRUG IMPORT CONTROLLER RUNNING ===');
-  
+
   const db = req.app.locals.db;
   if (!req.file) {
     return res.status(400).json({ status: false, message: 'No file uploaded' });
@@ -57,9 +57,26 @@ const importDrugs = async (req, res) => {
 
     if (results.length === 0) {
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ 
-        status: false, 
-        message: 'No data found in CSV file' 
+      return res.status(400).json({
+        status: false,
+        message: 'No data found in CSV file'
+      });
+    }
+
+    // Validate template format - check if first two columns match expected headers
+    const firstRow = results[0];
+    const headers = Object.keys(firstRow);
+
+    // Check if the CSV has the correct structure (first two columns should be 'Drug Type' and 'Name')
+    const hasCorrectHeaders = headers.length >= 2 &&
+      (headers[0].toLowerCase().includes('drug') || headers[0].toLowerCase().includes('type')) &&
+      headers[1].toLowerCase() === 'name';
+
+    if (!hasCorrectHeaders) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        status: false,
+        message: 'Invalid CSV format. Please download and use the Final_medslist.csv template. The first two columns must be "Drug Type" and "Name".'
       });
     }
 
@@ -71,43 +88,40 @@ const importDrugs = async (req, res) => {
       try {
         console.log(`\n--- Processing row ${index + 1} ---`);
         console.log('Row data:', row);
-        
-        // ✅ ALL FIELDS ARE REQUIRED EXCEPT DESCRIPTION AND CATEGORY
-        // Validate required fields
-        const requiredFields = [
-          { key: 'Name', value: row.Name || row.name },
-          { key: 'Drug_Type', value: row.Drug_Type || row['Drug Type'] || row.drug_type },
-          { key: 'Batch_No', value: row.Batch_No || row['Batch No'] || row.batch_no },
-          { key: 'Stock', value: row.Stock || row.stock },
-          { key: 'Price', value: row.Price || row.price }
-        ];
 
-        const missingFields = requiredFields.filter(field => {
-          const value = field.value;
-          return value === undefined || value === null || value === '' || 
-                 (typeof value === 'string' && value.trim() === '');
-        });
+        // Check if row has essential data - skip if any essential field is missing or empty
+        const drugName = (row.Name || row.name || '').trim();
+        const drugType = (row.Drug_Type || row['Drug Type'] || row.drug_type || '').trim();
+        const batchNo = (row.Batch_No || row['Batch No'] || row.batch_no || '').trim();
+        const stockStr = (row.Stock || row.stock || '').toString().trim();
+        const priceStr = (row.Price || row.price || '').toString().trim();
 
-        if (missingFields.length > 0) {
-          throw new Error(`Missing required fields: ${missingFields.map(f => f.key).join(', ')}`);
+        console.log(`Checking fields - Name: '${drugName}', Type: '${drugType}', Batch: '${batchNo}', Stock: '${stockStr}', Price: '${priceStr}'`);
+
+        // Skip rows that don't have all essential fields filled
+        if (!drugName || !drugType || !batchNo || !stockStr || !priceStr) {
+          console.log(`⚠ Skipping row ${index + 1}: Missing essential fields`);
+          skippedCount++;
+          continue; // Skip to next row
         }
 
-        const drugName = (row.Name || row.name).trim();
-        const drugType = (row.Drug_Type || row['Drug Type'] || row.drug_type).trim();
-        const batchNo = (row.Batch_No || row['Batch No'] || row.batch_no).trim();
-        const stock = parseInt(row.Stock || row.stock);
-        const price = parseFloat(row.Price || row.price);
-        
-        console.log('Validated fields:', { drugName, drugType, batchNo, stock, price });
+        // Validate numeric fields
+        const stock = parseInt(stockStr);
+        const price = parseFloat(priceStr);
 
-        // Validate stock and price
         if (isNaN(stock) || stock < 0) {
-          throw new Error(`Invalid stock value: ${row.Stock || row.stock}`);
+          console.log(`⚠ Skipping row ${index + 1}: Invalid stock value '${stockStr}'`);
+          skippedCount++;
+          continue;
         }
-        
+
         if (isNaN(price) || price < 0) {
-          throw new Error(`Invalid price value: ${row.Price || row.price}`);
+          console.log(`⚠ Skipping row ${index + 1}: Invalid price value '${priceStr}'`);
+          skippedCount++;
+          continue;
         }
+
+        console.log('Validated fields:', { drugName, drugType, batchNo, stock, price });
 
         // STEP 1: Handle drug type and drug name linking
         let typeId = null;
@@ -278,11 +292,14 @@ const importDrugs = async (req, res) => {
         
       } catch (error) {
         console.log(`✗ Row ${index + 1} error:`, error.message);
-        errors.push({
-          row: index + 2,
-          error: error.message,
-          data: row,
-        });
+        // Only add to errors if it's an actual error (not just skipping blank rows)
+        if (!error.message.includes('Skipping row')) {
+          errors.push({
+            row: index + 2,
+            error: error.message,
+            data: row,
+          });
+        }
       }
     }
 
@@ -296,18 +313,21 @@ const importDrugs = async (req, res) => {
     console.log('=== IMPORT SUMMARY ===');
     console.log(`Drugs added: ${addedCount}`);
     console.log(`Drugs updated: ${updatedCount}`);
-    console.log(`Drugs skipped (no changes): ${skippedCount}`);
+    console.log(`Blank/incomplete rows skipped: ${skippedCount}`);
     console.log(`Drug names added: ${drugNamesAdded}`);
+    console.log(`Total rows processed: ${results.length}`);
+    console.log(`Import errors: ${errors.length}`);
 
     res.status(200).json({
       status: true,
-      message: `CSV import completed: ${addedCount} added, ${updatedCount} updated, ${skippedCount} skipped`,
+      message: `CSV import completed: ${addedCount} added, ${updatedCount} updated, ${skippedCount} blank rows skipped`,
       summary: {
         added: addedCount,
         updated: updatedCount,
         skipped: skippedCount,
         drugNamesAdded: drugNamesAdded,
         total: results.length,
+        processed: results.length - skippedCount,
         errors: errors.length
       },
       errors: errors.length > 0 ? errors : undefined

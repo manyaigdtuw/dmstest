@@ -11,7 +11,11 @@
       "Bash(xargs grep:*)",
       "Bash(curl -s -H \"Authorization: Bearer YOUR_TOKEN\" http://localhost:3000/api/pharmacy/inventory)",
       "Bash(curl -s http://localhost:3000/api/pharmacy/inventory)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find c:UsersmanyaDownloadsdms_newDMS -name *.csv -type f)",
+      "Bash(curl http://localhost:$PORT:-3000/Final_medslist.csv)",
+      "Bash(curl -v http://localhost:3000/Final_medslist.csv)",
+      "Bash(curl -v http://localhost:8005/Final_medslist.csv)"
     ]
   }
 }
