@@ -59,7 +59,7 @@ app.use("/api/orders", instituteOrderRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/history', historyRoutes);
 app.use("/api/users", usersRoutes);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics", analyticsRoutes);                                                                                                                                                            
 app.use('/api/pharmacy', pharmacyOrderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/reset", resetProfileRoutes);
